@@ -1,0 +1,67 @@
+								<form id="data" class="block_form">
+									<div class="block_settings">
+										<div class="buttons">
+											<div class="up_down">
+												<div class="btn_up" value="up"><p></p></div>
+												<div class="btn_down" value="down"><p></p></div>
+											</div>
+											<button class="remove" onclick="return removeThis(this)">X</button>
+											<button class="add block_hide" onclick="return hideThis(this)">Cвернуть</button>
+										</div>
+									</div>
+									<p class="form_title">Заголовок с картинками</p>
+									<div class="form_content">
+										<input type="text" name="ID" value="<?php echo $ID; ?>" style="display:none;">
+										<input type="text" name="ID_PAGE_TEMPLATE" value="<?php echo $ID_PAGE_TEMPLATE; ?>" style="display:none;">
+										<input type="text" name="TYPE" value="H2" style="display:none;">
+										<div class="forma_group">
+											<p>Заголовок</p>
+											<div class="forma_group_item text">
+												<input autocomplete="off" type="text" name="TITLE" value='<?php echo (isset($TITLE))?$TITLE:''; ?>'>
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Левая картинка</p>
+											<div class="forma_group_item file">
+												<input autocomplete="off" type="file" name="LEFT_IMAGE">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Подпись левой картинки</p>
+											<div class="forma_group_item text">
+												<input autocomplete="off" type="text" name="LEFT_IMAGE_SIGN" value="<?php echo (isset($LEFT_IMAGE_SIGN))?$LEFT_IMAGE_SIGN:''; ?>">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Средняя картинка</p>
+											<div class="forma_group_item file">
+												<input autocomplete="off" type="file" name="MIDDLE_IMAGE">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Подпись средней картинки</p>
+											<div class="forma_group_item text">
+												<input autocomplete="off" type="text" name="MIDDLE_IMAGE_SIGN" value="<?php echo (isset($MIDDLE_IMAGE_SIGN))?$MIDDLE_IMAGE_SIGN:''; ?>">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Правая картинка</p>
+											<div class="forma_group_item file">
+												<input autocomplete="off" type="file" name="RIGHT_IMAGE">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+										<div class="forma_group">
+											<p>Подпись правой картинки</p>
+											<div class="forma_group_item text">
+												<input autocomplete="off" type="text" name="RIGHT_IMAGE_SIGN" value="<?php echo (isset($RIGHT_IMAGE_SIGN))?$RIGHT_IMAGE_SIGN:''; ?>">
+												<p class="forma_group_item_description"></p>
+											</div>
+										</div>
+									</div>
+								</form>
