@@ -749,7 +749,7 @@ class MainAdmin extends Admin {
 					]),
 				],
 				'COUNTRY' => $this->db->row('SELECT ID as `VALUE`, NAME as `TEXT` FROM DATA_COUNTRIES ORDER BY SERIAL_NUMBER ASC'),
-				'OK' => 'return cms.ajaxSend("/admin/ajax/catalog/buses/change")',
+				'OK' => 'return cms.modalSend("/admin/ajax/catalog/buses/change")',
 			],
 		];
 	}
@@ -759,13 +759,57 @@ class MainAdmin extends Admin {
 				'FIELDS' => [
 					$this->get_modal_field_struct([
 						'NAME' => 'TITLE',
-						'TYPE' => 'TEXT',
-						'TYPE__PARENT_BOX' => '',
 						'TITLE' => 'Название',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'SERIAL_NUMBER',
+						'TYPE' => 'NUMBER_BTN',
+						'TITLE' => 'Номер по порядку',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'ID_COUNTRY',
+						'TYPE' => 'CMB',
+						'TYPE__PARENT_BOX' => 'COUNTRY',
+						'TITLE' => 'Страна',
+					]),
+
+					$this->get_modal_field_struct([
+						'NAME' => 'URI',
+						'TITLE' => 'Название в ссылке',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'IMAGE_OUTER',
+						'TYPE' => 'FILE',
+						'TITLE' => 'Вид снаружи',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'IMAGE_INNER',
+						'TYPE' => 'FILE',
+						'TITLE' => 'Вид внутри',
+					]),
+
+					$this->get_modal_field_struct([
+						'NAME' => 'TECH_TITLE',
+						'TITLE' => 'Заголовок описания тех. хар-к',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'TECH_DESCR',
+						'TYPE' => 'TEXT_AREA',
+						'TITLE' => 'Описание тех. хар-к',
+					]),
+
+					$this->get_modal_field_struct([
+						'NAME' => 'SUBTITLE',
+						'TITLE' => 'Подзаголовок описания',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'TEXT',
+						'TYPE' => 'TEXT_AREA',
+						'TITLE' => 'Описание',
 					]),
 				],
 				'COUNTRY' => $this->db->row('SELECT ID as `VALUE`, NAME as `TEXT` FROM DATA_COUNTRIES ORDER BY SERIAL_NUMBER ASC'),
-				'OK' => 'return cms.ajaxSend("/admin/ajax/catalog/minivans/change")',
+				'OK' => 'return cms.modalSend("/admin/ajax/catalog/minivans/change")',
 			],
 		];
 	}
@@ -774,14 +818,26 @@ class MainAdmin extends Admin {
 			'MODAL_WND' => [
 				'FIELDS' => [
 					$this->get_modal_field_struct([
-						'NAME' => '',
-						'TYPE' => 'TEXT',
-						'TYPE__PARENT_BOX' => '',
-						'TITLE' => '',
+						'NAME' => 'TITLE',
+						'TITLE' => 'Заголовок',
 					]),
-
+					$this->get_modal_field_struct([
+						'NAME' => 'TEXT',
+						'TYPE' => 'TEXT_AREA',
+						'TITLE' => 'Текст',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'IMAGE',
+						'TYPE' => 'FILE',
+						'TITLE' => 'Картинка',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'ON_INDEX',
+						'TYPE' => 'CB',
+						'TITLE' => 'На главной',
+					]),
 				],
-				'OK' => 'return cms.ajaxSend("/admin/ajax/catalog/news/change")',
+				'OK' => 'return cms.modalSend("/admin/ajax/catalog/news/change")',
 			],
 		];
 	}
@@ -790,14 +846,22 @@ class MainAdmin extends Admin {
 			'MODAL_WND' => [
 				'FIELDS' => [
 					$this->get_modal_field_struct([
-						'NAME' => '',
-						'TYPE' => 'TEXT',
-						'TYPE__PARENT_BOX' => '',
-						'TITLE' => '',
+						'NAME' => 'TITLE',
+						'TITLE' => 'Заголовок',
 					]),
-
+					$this->get_modal_field_struct([
+						'NAME' => 'IMAGE',
+						'TYPE' => 'FILE',
+						'TYPE__PARENT_BOX' => '',
+						'TITLE' => 'Картинка',
+					]),
+					$this->get_modal_field_struct([
+						'NAME' => 'DESCR',
+						'TYPE' => 'TEXT_AREA',
+						'TITLE' => 'Текст',
+					]),
 				],
-				'OK' => 'return cms.ajaxSend("/admin/ajax/catalog/vacancies/change")',
+				'OK' => 'return cms.modalSend("/admin/ajax/catalog/vacancies/change")',
 			],
 		];
 	}
@@ -828,7 +892,7 @@ class MainAdmin extends Admin {
 
 	private function listBuses(){
 		$return = [];
-		$result = $this->db->row('SELECT DB.ID, DC.NAME as COUNTRY, DC.IMAGE as COUNTRY_IMAGE, DB.TITLE as MARK, DB.IMAGE_OUTER, DB.IMAGE_INNER FROM DATA_BUSES as DB INNER JOIN DATA_COUNTRIES as DC ON DC.ID = DB.ID_COUNTRY ORDER BY DC.SERIAL_NUMBER ASC, DB.SERIAL_NUMBER ASC');
+		$result = $this->db->row('SELECT DB.ID, DC.NAME as COUNTRY, DC.IMAGE as COUNTRY_IMAGE, DB.TITLE as MARK, DB.IMAGE_OUTER, DB.IMAGE_INNER FROM DATA_BUSES as DB LEFT JOIN DATA_COUNTRIES as DC ON DC.ID = DB.ID_COUNTRY ORDER BY DC.SERIAL_NUMBER ASC, DB.SERIAL_NUMBER ASC');
 		foreach($result as $key => $val){
 			$result[$key]['COUNTRY'] = [
 				'alt'=> $result[$key]['COUNTRY'],
@@ -875,7 +939,7 @@ class MainAdmin extends Admin {
 
 	private function listMinivans(){
 		$return = [];
-		$result = $this->db->row('SELECT DM.ID, DC.NAME as COUNTRY, DC.IMAGE as COUNTRY_IMAGE, DM.TITLE as MARK, DM.IMAGE_OUTER, DM.IMAGE_INNER FROM DATA_MINIVANS as DM INNER JOIN DATA_COUNTRIES as DC ON DC.ID = DM.ID_COUNTRY ORDER BY DC.SERIAL_NUMBER ASC, DM.SERIAL_NUMBER ASC');
+		$result = $this->db->row('SELECT DM.ID, DC.NAME as COUNTRY, DC.IMAGE as COUNTRY_IMAGE, DM.TITLE as MARK, DM.IMAGE_OUTER, DM.IMAGE_INNER FROM DATA_MINIVANS as DM LEFT JOIN DATA_COUNTRIES as DC ON DC.ID = DM.ID_COUNTRY ORDER BY DC.SERIAL_NUMBER ASC, DM.SERIAL_NUMBER ASC');
 		foreach($result as $key => $val){
 			$result[$key]['COUNTRY'] = [
 				'alt'=> $result[$key]['COUNTRY'],

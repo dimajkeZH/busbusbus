@@ -139,6 +139,8 @@ return [
 		'action' => 'delPages',
 	],
 
+
+
 	//
 	'admin/ajax/catalog/buses/remove/[0-9]{1,}' => [
 		'controller' => 'AjaxAdmin',
@@ -159,6 +161,31 @@ return [
 		'controller' => 'AjaxAdmin',
 		'action' => 'delVacancies',
 	],
+
+	//
+	'admin/ajax/catalog/buses/change' => [
+		'controller' => 'AjaxAdmin',
+		'action' => 'changeBuses',
+	],
+	//
+	'admin/ajax/catalog/minivans/change' => [
+		'controller' => 'AjaxAdmin',
+		'action' => 'changeMinivans',
+	],
+	//
+	'admin/ajax/catalog/news/change' => [
+		'controller' => 'AjaxAdmin',
+		'action' => 'changeNews',
+	],
+	//
+	'admin/ajax/catalog/vacancies/change' => [
+		'controller' => 'AjaxAdmin',
+		'action' => 'changeVacancies',
+	],
+	
+	
+	
+	
 	/* ADMIN AJAX END */
 
 

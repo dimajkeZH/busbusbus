@@ -13,8 +13,10 @@ class OtherUser extends User {
 			'CONTROLLER' => $route['controller'],
 			'ACTION' => $route['action']
 		];
-		#debug([$this->db->row($q, $params), $q]);
-		return $this->db->row($q, $params)[0];
+		#debug([$this->db->row($q, $params), $q, $params]);
+		$result = $this->db->row($q, $params);
+		$result = (count($result) > 0) ? $result[0] : [];
+		return $result;
 	}
 
 	public function getView($route){
@@ -44,11 +46,12 @@ class OtherUser extends User {
 		$result['PAGE'] = $route['param'];
 		$result['NEWSLIST'] = $this->db->row('SELECT * FROM DATA_NEWS ORDER BY DATE_ADD DESC, TIME_ADD DESC LIMIT '.$limA.','.$countNews.';');
 		$result['CONTENT'] = $this->content($route);
+		#debug($result);
 		return $result;
 	}
 
 	public function getBus($route){
-		$q = 'SELECT * FROM DATA_BUSES WHERE URI LIKE :URI';
+		$q = 'SELECT * FROM DATA_BUSES WHERE URI LIKE :URI UNION SELECT * FROM DATA_MINIVANS WHERE URI LIKE :URI';
 		$params = ['URI' => $route['param']];
 		$return['CONTENT'] = $this->db->row($q, $params);
 		if(count($return['CONTENT']) == 0){

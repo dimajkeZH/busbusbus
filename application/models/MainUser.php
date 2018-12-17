@@ -11,6 +11,7 @@ class MainUser extends User {
 	const PAGELIST = 'PAGELIST';
 	const USER_CHOICE = 'USER_CHOICE';
 	const NEWS = 'NEWS';
+	const NEWS_ON_INDEX = 'NEWS_ON_INDEX';
 	const LOCATION = 'LOCATION';
 
 
@@ -30,8 +31,11 @@ class MainUser extends User {
 					$result[self::PAGELIST] = $this->pagelist($route);
 					break;
 				case self::NEWS:
-					$result[self::NEWS] = $this->getNews($route);
-					break;	
+					$result[self::NEWS] = $this->getNews();
+					break;
+				case self::NEWS_ON_INDEX:
+					$result[self::NEWS_ON_INDEX] = $this->getNews(true);
+					break;
 				case self::LOCATION:
 					$result[self::LOCATION] = $this->getLocationID($route);
 					break;
@@ -65,6 +69,16 @@ class MainUser extends User {
 			'ACTION' => $route['action']
 		];
 		return $this->db->column($q, $params);
+	}
+
+	private function getNews($on_index = false){
+		$q = 'SELECT * FROM DATA_NEWS';
+		if($on_index){
+			$q .= ' WHERE ON_INDEX = 1';
+		}
+		$q .= ' ORDER BY DATE_ADD DESC, TIME_ADD DESC';
+		#debug([$q, $this->db->row($q)]);
+		return $this->db->row($q);
 	}
 
 }

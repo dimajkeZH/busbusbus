@@ -15,12 +15,20 @@ class AjaxAdmin extends Admin {
 	const IMAGE_NAME_LEN = 64;
 	const IMAGE_DIR = '/assets/img/';
 
+
 	const IMAGE_CATALOG_SERVICES = 'services/';
+
 	const IMAGE_CATALOG_BUSES = 'buses/mest/';
 	const IMAGE_CATALOG_BUS = 'buses/bus_catalog/';
+
 	const IMAGE_CATALOG_MINIVANS = 'minivans/mest/';
 	const IMAGE_CATALOG_MINIVAN = 'minivans/minivan_catalog/';
+
 	const IMAGE_CATALOG_EXCURSIONS = 'excursions/';
+
+	const IMAGE_CATALOG_VACANCIES = 'vacancies/';
+
+	const IMAGE_CATALOG_NEWS = 'news/';
 
 	const IMAGE_TEMPLATE_HEADER_GROUP = 'templates/header_group/';
 	const IMAGE_TEMPLATE_HEADER_PAGE = 'templates/header_page/';
@@ -58,7 +66,15 @@ class AjaxAdmin extends Admin {
 		$params = [
 			'ID' => $route['param'],
 		];
-		return $this->db->bool($q, $params);
+		$old_files = $this->db->row('SELECT IMAGE_INNER, IMAGE_OUTER FROM DATA_BUSES WHERE ID = ' . $route['param']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+
+		if($this->db->bool($q, $params)){
+			$this->deleteImage(self::IMAGE_CATALOG_BUS, $old_files['IMAGE_INNER']);
+			$this->deleteImage(self::IMAGE_CATALOG_BUS, $old_files['IMAGE_OUTER']);
+			return true;
+		}
+		return false;
 	}
 
 	public function delMinivans($route){
@@ -66,7 +82,15 @@ class AjaxAdmin extends Admin {
 		$params = [
 			'ID' => $route['param'],
 		];
-		return $this->db->bool($q, $params);
+		$old_files = $this->db->row('SELECT IMAGE_INNER, IMAGE_OUTER FROM DATA_MINIVANS WHERE ID = ' . $route['param']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+
+		if($this->db->bool($q, $params)){
+			$this->deleteImage(self::IMAGE_CATALOG_MINIVAN, $old_files['IMAGE_INNER']);
+			$this->deleteImage(self::IMAGE_CATALOG_MINIVAN, $old_files['IMAGE_OUTER']);
+			return true;
+		}
+		return false;
 	}
 
 	public function delNews($route){
@@ -74,7 +98,14 @@ class AjaxAdmin extends Admin {
 		$params = [
 			'ID' => $route['param'],
 		];
-		return $this->db->bool($q, $params);
+		$old_files = $this->db->row('SELECT IMAGE FROM DATA_NEWS WHERE ID = ' . $route['param']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+
+		if($this->db->bool($q, $params)){
+			$this->deleteImage(self::IMAGE_CATALOG_NEWS, $old_files['IMAGE']);
+			return true;
+		}
+		return false;
 	}
 
 	public function delVacancies($route){
@@ -82,23 +113,196 @@ class AjaxAdmin extends Admin {
 		$params = [
 			'ID' => $route['param'],
 		];
+
+		$old_files = $this->db->row('SELECT IMAGE FROM DATA_VACANCIES WHERE ID = ' . $route['param']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+
+		if($this->db->bool($q, $params)){
+			$this->deleteImage(self::IMAGE_CATALOG_VACANCIES, $old_files['IMAGE']);
+			return true;
+		}
+		return false;
+	}
+
+
+
+
+
+	public function changeBuses($post, $files){
+		if(!isset($post['ID'])){
+			return false;
+		};
+
+		$params = [
+			'TITLE' => $post['TITLE'],
+			'ID_COUNTRY' => $post['ID_COUNTRY'],
+			'URI' => $post['URI'],
+			'TECH_TITLE' => $post['TECH_TITLE'],
+			'TECH_DESCR' => $post['TECH_DESCR'],
+			'SUBTITLE' => $post['SUBTITLE'],
+			'TEXT' => $post['TEXT'],
+		];
+
+		if($post['SERIAL_NUMBER'] && $post['SERIAL_NUMBER'] != ''){
+			$params['SERIAL_NUMBER'] = $post['SERIAL_NUMBER'];
+			$old_serial_number = $this->db->column('SELECT SERIAL_NUMBER FROM DATA_BUSES WHERE ID = '.$post['ID']);
+			if($old_serial_number != $post['SERIAL_NUMBER']){
+				$this->db->bool('UPDATE DATA_BUSES SET SERIAL_NUMBER = SERIAL_NUMBER + 1 WHERE (SERIAL_NUMBER >= ' . $post['SERIAL_NUMBER'] . ') AND ID_COUNTRY = ' . $post['ID_COUNTRY']);
+			}
+		}else{
+			$params['SERIAL_NUMBER'] = $this->db->column('SELECT MAX(`SERIAL_NUMBER`) + 1 FROM DATA_BUSES WHERE ID_COUNTRY = ' . $post['ID_COUNTRY']);
+		}
+
+		$old_files = $this->db->row('SELECT IMAGE_INNER, IMAGE_OUTER FROM DATA_BUSES WHERE ID = ' . $post['ID']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+		$params['IMAGE_INNER'] = isset($old_files['IMAGE_INNER']) ? $old_files['IMAGE_INNER'] : '';
+		$params['IMAGE_OUTER'] = isset($old_files['IMAGE_OUTER']) ? $old_files['IMAGE_OUTER'] : '';
+		foreach($files as $name => $file){
+			if($post['ID'] == 0){
+				$params[$name] = $this->loadImage(self::IMAGE_CATALOG_BUS, $file);
+			}else{
+				if(isset($old_files[$name]) && $old_files[$name]!= ''){
+					$params[$name] = $this->replaceImage(self::IMAGE_CATALOG_BUS, $old_files[$name], $file);
+				}else{
+					$params[$name] = $this->loadImage(self::IMAGE_CATALOG_BUS, $file);
+				}
+			}
+		}
+
+		if($post['ID'] == 0){
+			$q = 'INSERT INTO DATA_BUSES (TITLE, ID_COUNTRY, URI, TECH_TITLE, TECH_DESCR, SUBTITLE, TEXT, SERIAL_NUMBER, IMAGE_INNER, IMAGE_OUTER) VALUES (:TITLE, :ID_COUNTRY, :URI, :TECH_TITLE, :TECH_DESCR, :SUBTITLE, :TEXT, :SERIAL_NUMBER, :IMAGE_INNER, :IMAGE_OUTER)';
+		}else{
+			$q = 'UPDATE DATA_BUSES SET TITLE = :TITLE, ID_COUNTRY = :ID_COUNTRY, URI = :URI, TECH_TITLE = :TECH_TITLE, TECH_DESCR = :TECH_DESCR, SUBTITLE = :SUBTITLE, TEXT = :TEXT, SERIAL_NUMBER = :SERIAL_NUMBER, IMAGE_INNER = :IMAGE_INNER, IMAGE_OUTER = :IMAGE_OUTER WHERE ID = :ID';
+			$params['ID'] = $post['ID'];
+		}
+		#debug([$this->db->bool($q, $params),$q, $params]);
 		return $this->db->bool($q, $params);
 	}
 
-	public function changeBuses($post, $files){
-		return true;
-	}
-
 	public function changeMinivans($post, $files){
-		return true;
+		if(!isset($post['ID'])){
+			return false;
+		};
+
+		$params = [
+			'TITLE' => $post['TITLE'],
+			'ID_COUNTRY' => $post['ID_COUNTRY'],
+			'URI' => $post['URI'],
+			'TECH_TITLE' => $post['TECH_TITLE'],
+			'TECH_DESCR' => $post['TECH_DESCR'],
+			'SUBTITLE' => $post['SUBTITLE'],
+			'TEXT' => $post['TEXT'],
+		];
+		if($post['SERIAL_NUMBER'] && $post['SERIAL_NUMBER'] != ''){
+			$params['SERIAL_NUMBER'] = $post['SERIAL_NUMBER'];
+			$old_serial_number = $this->db->column('SELECT SERIAL_NUMBER FROM DATA_MINIVANS WHERE ID = '.$post['ID']);
+			if($old_serial_number != $post['SERIAL_NUMBER']){
+				$this->db->bool('UPDATE DATA_MINIVANS SET SERIAL_NUMBER = SERIAL_NUMBER + 1 WHERE (SERIAL_NUMBER >= ' . $post['SERIAL_NUMBER'] . ') AND ID_COUNTRY = ' . $post['ID_COUNTRY']);
+			}
+		}else{
+			$params['SERIAL_NUMBER'] = $this->db->column('SELECT MAX(`SERIAL_NUMBER`) + 1 FROM DATA_MINIVANS WHERE ID_COUNTRY = ' . $post['ID_COUNTRY']);
+			if($params['SERIAL_NUMBER'] == ''){
+				$params['SERIAL_NUMBER'] = 1;
+			}
+		}
+
+		$old_files = $this->db->row('SELECT IMAGE_INNER, IMAGE_OUTER FROM DATA_MINIVANS WHERE ID = ' . $post['ID']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+		$params['IMAGE_INNER'] = isset($old_files['IMAGE_INNER']) ? $old_files['IMAGE_INNER'] : '';
+		$params['IMAGE_OUTER'] = isset($old_files['IMAGE_OUTER']) ? $old_files['IMAGE_OUTER'] : '';
+		foreach($files as $name => $file){
+			if($post['ID'] == 0){
+				$params[$name] = $this->loadImage(self::IMAGE_CATALOG_MINIVAN, $file);
+			}else{
+				if(isset($old_files[$name]) && $old_files[$name]!= ''){
+					$params[$name] = $this->replaceImage(self::IMAGE_CATALOG_MINIVAN, $old_files[$name], $file);
+				}else{
+					$params[$name] = $this->loadImage(self::IMAGE_CATALOG_MINIVAN, $file);
+				}
+			}
+		}
+
+		if($post['ID'] == 0){
+			$q = 'INSERT INTO DATA_MINIVANS (TITLE, ID_COUNTRY, URI, TECH_TITLE, TECH_DESCR, SUBTITLE, TEXT, SERIAL_NUMBER, IMAGE_INNER, IMAGE_OUTER) VALUES (:TITLE, :ID_COUNTRY, :URI, :TECH_TITLE, :TECH_DESCR, :SUBTITLE, :TEXT, :SERIAL_NUMBER, :IMAGE_INNER, :IMAGE_OUTER)';
+		}else{
+			$q = 'UPDATE DATA_MINIVANS SET TITLE = :TITLE, ID_COUNTRY = :ID_COUNTRY, URI = :URI, TECH_TITLE = :TECH_TITLE, TECH_DESCR = :TECH_DESCR, SUBTITLE = :SUBTITLE, TEXT = :TEXT, SERIAL_NUMBER = :SERIAL_NUMBER, IMAGE_INNER = :IMAGE_INNER, IMAGE_OUTER = :IMAGE_OUTER WHERE ID = :ID';
+			$params['ID'] = $post['ID'];
+		}
+		#debug([$this->db->bool($q, $params),$q, $params]);
+		return $this->db->bool($q, $params);
 	}
 
 	public function changeNews($post, $files){
-		return true;
+				if(!isset($post['ID'])){
+			return false;
+		};
+
+		$params = [
+			'TITLE' => $post['TITLE'],
+			'TEXT' => $post['TEXT'],
+			'ON_INDEX' => 0, #$post['ON_INDEX'],
+		];
+
+		$old_files = $this->db->row('SELECT IMAGE FROM DATA_NEWS WHERE ID = ' . $post['ID']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+		$params['IMAGE'] = isset($old_files['IMAGE']) ? $old_files['IMAGE'] : '';
+
+		foreach($files as $name => $file){
+			if($post['ID'] == 0){
+				$params[$name] = $this->loadImage(self::IMAGE_CATALOG_NEWS, $file);
+			}else{
+				if(isset($old_files[$name]) && $old_files[$name]!= ''){
+					$params[$name] = $this->replaceImage(self::IMAGE_CATALOG_NEWS, $old_files[$name], $file);
+				}else{
+					$params[$name] = $this->loadImage(self::IMAGE_CATALOG_NEWS, $file);
+				}
+			}
+		}
+
+		if($post['ID'] == 0){
+			$q = 'INSERT INTO DATA_NEWS (TITLE, DATE_ADD, TIME_ADD, TEXT, ON_INDEX, IMAGE) VALUES (:TITLE, CURDATE(), CURTIME(), :TEXT, :ON_INDEX, :IMAGE)';
+		}else{
+			$q = 'UPDATE DATA_NEWS SET TITLE = :TITLE, TEXT = :TEXT, ON_INDEX = :ON_INDEX, IMAGE = :IMAGE WHERE ID = :ID';
+			$params['ID'] = $post['ID'];
+		}
+		#debug([$this->db->bool($q, $params),$q, $params]);
+		return $this->db->bool($q, $params);
 	}
 
 	public function changeVacancies($post, $files){
-		return true;
+				if(!isset($post['ID'])){
+			return false;
+		};
+
+		$params = [
+			'TITLE' => $post['TITLE'],
+			'DESCR' => $post['DESCR'],
+		];
+
+		$old_files = $this->db->row('SELECT IMAGE FROM DATA_VACANCIES WHERE ID = ' . $post['ID']);
+		$old_files = count($old_files) == 1 ? $old_files[0] : [];
+		$params['IMAGE'] = isset($old_files['IMAGE']) ? $old_files['IMAGE'] : '';
+
+		foreach($files as $name => $file){
+			if($post['ID'] == 0){
+				$params[$name] = $this->loadImage(self::IMAGE_CATALOG_VACANCIES, $file);
+			}else{
+				if(isset($old_files[$name]) && $old_files[$name]!= ''){
+					$params[$name] = $this->replaceImage(self::IMAGE_CATALOG_VACANCIES, $old_files[$name], $file);
+				}else{
+					$params[$name] = $this->loadImage(self::IMAGE_CATALOG_VACANCIES, $file);
+				}
+			}
+		}
+
+		if($post['ID'] == 0){
+			$q = 'INSERT INTO DATA_VACANCIES (TITLE, IMAGE, DESCR) VALUES (:TITLE, :IMAGE, :DESCR)';
+		}else{
+			$q = 'UPDATE DATA_VACANCIES SET TITLE = :TITLE, IMAGE = :IMAGE, DESCR = :DESCR WHERE ID = :ID';
+			$params['ID'] = $post['ID'];
+		}
+		#debug([$this->db->bool($q, $params),$q, $params]);
+		return $this->db->bool($q, $params);
 	}
 
 
@@ -785,6 +989,15 @@ class AjaxAdmin extends Admin {
 	   	}
 	   	return '';
 	}
+
+	private function deleteImage($dir, $file){
+		$path = $_SERVER['DOCUMENT_ROOT'].self::IMAGE_DIR.$dir.$file.'.'.self::IMAGE_FILE_FORMAT;
+		if(file_exists($path)){
+			return unlink($path);
+		}
+		return true;
+	}
+
 
 	private function imgOptimize($image){
 		return;

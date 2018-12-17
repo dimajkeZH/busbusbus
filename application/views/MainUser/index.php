@@ -154,30 +154,16 @@
 			<h2 class="main_news_title">Новости</h2>
 			<div class="main_line"></div>
 			<div class="main_news_items">
+				<?php foreach($NEWS_ON_INDEX as $item): ?>
 				<div class="main_news_item">
-					<img src="/assets/img/news/n1.png" alt="">
+					<img src="/assets/img/news/<?php echo $item['IMAGE'] ? $item['IMAGE'] : ''; ?>.png" alt="">
 					<div class="main_news_item_info">
-						<p class="main_news_item_date">23.08.2016</p>
-						<h3 class="main_news_item_title">Правила перевозки групп детей</h3>
-						<p class="main_news_item_content">В ночное время суток (с 23:00 до 6:00) пассажирские перевозки групп детей допускаются лишь к железнодорожным вокзалам и аэропортам а так же в обратном направлении. В случае задержки в пути по причине поломки или пробок на дорогах разрешается перевозка детей до конечного пункта или пункта ночлега. Длинна маршрута после 23:00 не должно быть более 100 километров. При организованной междугородней перевозке длящейся более 3 часов необходимо сопровождения детей медицинским работником.</p>
+						<p class="main_news_item_date"><?php echo $item['DATE_ADD'] ? $item['DATE_ADD'] : ''; ?></p>
+						<h3 class="main_news_item_title"><?php echo $item['TITLE'] ? $item['TITLE'] : ''; ?></h3>
+						<p class="main_news_item_content"><?php echo $item['TEXT'] ? $item['TEXT'] : ''; ?></p>
 					</div>
 				</div>
-				<div class="main_news_item">
-					<img src="/assets/img/news/n2.png" alt="">
-					<div class="main_news_item_info">
-						<p class="main_news_item_date">14.07.2016</p>
-						<h3 class="main_news_item_title">Схема маршрута</h3>
-						<p class="main_news_item_content">По правилам транспортировки пассажиров водитель должен иметь схему маршрута проезда с указанием мест остановок. Заказчик может подготовит схему сам, проложив маршрут в Яндекс картах и распечатать затем его на бумажном носителе. На схеме маршрута должна стоять дата и подпись руководителя группы. Отсутствие схемы маршрута влечет наложение штрафа на перевозчика и задержки транспорта.</p>
-					</div>
-				</div>
-				<div class="main_news_item">
-					<img src="/assets/img/news/n3.png" alt="">
-					<div class="main_news_item_info">
-						<p class="main_news_item_date">11.06.2016</p>
-						<h3 class="main_news_item_title">Список пассажиров автобуса</h3>
-						<p class="main_news_item_content">Заказчик обязан составить поименный список пассажиров, желательно с номерами телефонов для предоставления его водителю автобуса. Список пассажиров составляется в трех экземплярах. В случае проверки автобуса транспортной инспекцией, водитель обязан предоставить список пассажиров. Отсутствие списка влечет наложение внушительного штрафа на владельца транспорта.</p>
-					</div>
-				</div>
+				<?php endforeach; ?>
 			</div>
 			<div class="main_news_detail">
 				<a href="/news/1"><p>Все новости</p></a>

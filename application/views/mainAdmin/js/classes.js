@@ -234,9 +234,14 @@ class CMS_CORE{
 		this.is_logging = true;
 
 		this.content_box_id = 'content_box';
+		this.content_form_id = 'block_form';
+
 		this.modal_wnd_id = 'modal_wnd';
+		this.modal_form_id = 'modal_form';
+
 		this.site_tree_box_id = 'tree_box';
 		this.header_box_id = 'tabs';
+
 		this.loader_box_id = 'loader';
 
 		this.LINK_SITE_PAGE = '/admin/site/pages/';
@@ -260,13 +265,19 @@ class CMS_CORE{
 				}
 			},
 			function error(e){
-				console.log(e);
+				//console.log(e);
 				EASY_CMS.load_filed(component_name, 'Failed to send api script');
 			}
 		);
 	}
 
 	ajaxSend(url, btn = null){
+		if(btn.classList.contains('remove')){
+			if(!confirm('Вы уверены, что хотите удалить это ?')){
+				return false;
+			}
+		}
+
 		console.log('ajax send: ' + url);
 		this.content_loader.show();
 		let THIS = this;
@@ -282,7 +293,7 @@ class CMS_CORE{
 				THIS.content_loader.hide();
 			},
 			function error(e){
-				//console.log(e);
+				console.log(e);
 				THIS.show_message('Failed send api script', false);
 				setTimeout(function(){
 					THIS.content_loader.hide();
@@ -291,6 +302,56 @@ class CMS_CORE{
 		);
 		return false;
 	}
+
+	modalSend(url){
+		console.log('modal send: ' + url);
+		let modal_data = EASY_CMS.getData(this.modal_form_id);
+
+		let THIS = this;
+		new api('api').send(
+			url, 
+			modal_data, 
+			function success(data){
+				THIS.show_message(data.message, data.status);
+				if(data.status){
+					modalClose();
+				}
+				//loader hide
+			},
+			function error(e){
+				console.log(e);
+				THIS.show_message('Failed send api script', false);
+				setTimeout(function(){
+					//loader hide
+				}, 500)
+			}
+		);
+		this._refresh_content(window.location.pathname + window.location.search, false);
+		return false;
+	}
+
+
+	static getData(form_id){
+		let form = document.getElementById(form_id),
+			data = new FormData(),
+			fields = {};
+		let form_data = new FormData(form);
+		for(let pair of form_data.entries()) {
+			let name = pair[0],
+				field_type = form.querySelector('input[name='+ name +'], select[name='+ name +'], textarea[name='+ name +']').type,
+				value = pair[1];
+			if(field_type === 'file'){
+				if(value){
+					data.append(pair[0], pair[1]);
+				}
+			}else{
+				fields[pair[0]] = pair[1];
+			}
+		}
+		data.append('DATA', JSON.stringify(fields));
+		return data;
+	}
+
 
 	static load_filed(component_name, message = ''){
 		console.groupCollapsed('Failed to load ' + component_name);
@@ -422,7 +483,7 @@ class EASY_CMS extends CMS_CORE{
 		for(let i = 0; i < menu.length; i++){
 			let item = menu[i];
 			if(item.uri === cur_uri){
-				console.log(i);
+				//console.log(i);
 				return i;
 			}
 			let childrens = item.childrens || [];
@@ -439,7 +500,7 @@ class EASY_CMS extends CMS_CORE{
 
 	loading_environment(){
 		let empty_header_content = Components.header(this.cms_title, this.cms_version, this.session_username, this.cms_menu, this.header_box_id),
-			empty_wrapper_content = Components.wrapper(this.site_tree_box_id, this.content_box_id, this.loader_box_id, this.modal_wnd_id),
+			empty_wrapper_content = Components.wrapper(this.site_tree_box_id, this.content_box_id, this.loader_box_id, this.modal_wnd_id, this.modal_loader_box_id),
 			empty_footer_content = Components.footer();
 
 		let content = empty_header_content + empty_wrapper_content + empty_footer_content;
@@ -568,7 +629,7 @@ class EASY_CMS extends CMS_CORE{
 	}
 
 
-	_refresh_content(url = ''){
+	_refresh_content(url = '', is_refresh_modal = true){
 		this.content_loaded = false;
 		let THIS = this;
 		EASY_CMS.getJSON(url, 'content', function callback(data){
@@ -613,7 +674,7 @@ class EASY_CMS extends CMS_CORE{
 				let modal_wnd__component;
 				if(ADDITIONS != null){
 					let MODAL_WND = ADDITIONS.MODAL_WND || null;
-					if(MODAL_WND != null){
+					if(MODAL_WND != null && is_refresh_modal){
 						MODAL_WND.FIELDS.forEach(function(item, index){
 							if(item.TYPE__PARENT_BOX && item.TYPE__PARENT_BOX != ''){
 								parent = MODAL_WND[item.TYPE__PARENT_BOX];
@@ -625,10 +686,11 @@ class EASY_CMS extends CMS_CORE{
 							parent = null;
 						});
 
-						modal_wnd__component 	= "<div class='modal_wnd_wrapper' id='wrap' onclick='modalClose()'></div><div class='modal_wnd_inner' id='window'><div class='modal_wnd_head'><div class='buttons'><button onclick='modalClose()' class='remove'>Отмена</button><button onclick='" + (MODAL_WND.OK || '') + "' class='save'>Ок</button></div></div><div class='modal_wnd_content'><div class='modal_wnd_form'><form id='modal_form'>"
+						modal_wnd__component 	= "<div class='modal_wnd_head'><div class='buttons'><button onclick='modalClose()' class='remove'>Отмена</button><button onclick='" + (MODAL_WND.OK || '') + "' class='save'>Ок</button></div></div>"
+												+ '<div class="modal_wnd_content"><div class="modal_wnd_form"><form id="modal_form">'
 												+ '<input type="text" name="ID" value="" style="display:none;">'
 												+ MODAL_WND.FIELDS.join('')
-												+ '</form></div></div></div>';
+												+ '</form></div></div>';
 						
 						document.getElementById(THIS.modal_wnd_id).innerHTML = modal_wnd__component;
 					}
@@ -712,7 +774,6 @@ class EASY_CMS extends CMS_CORE{
 
 //add
 //save
-//remove
 
 
 
@@ -739,8 +800,8 @@ class Components{
 		return Components._get_header(title, version, username, menu, header_box_id);
 	}
 
-	static wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id){
-		return Components._get_wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id);
+	static wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id, modal_loader_box_id){
+		return Components._get_wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id, modal_loader_box_id);
 	}
 
 	static footer(){
@@ -835,7 +896,6 @@ class Components{
 		//console.log(buttons);
 		let thead = '';
 		columns.forEach(function(item, index){
-			//let style = item.PERC > 0 ? (" style='min-width:" + (item.PERC || 5) + "%'") : '';
 			thead += "<td>" + item.NAME + "</td>";
 		});
 		thead = '<tr><td>#</td>' + thead + '</tr>';
@@ -871,7 +931,7 @@ class Components{
 					}
 				});
 				let redirect = item.REDIRECT;
-				let redir_func = redirect && redirect != '' ? 'style="cursor:pointer" onclick="Redirect.handler(\'' + redirect + '\')"' : '';	
+				let redir_func = redirect && redirect != '' ? ' style="cursor:pointer" onclick="Redirect.handler(\'' + redirect + '\')" ' : '';	
 				tbody += '<tr' + redir_func + '>' + tr + '</tr>';
 			});
 		}else{
@@ -960,7 +1020,7 @@ class Components{
 	}
 
 
-	static _get_wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id){
+	static _get_wrapper(site_tree_box_id, content_box_id, loader_box_id, modal_wnd_id, modal_loader_box_id){
 		return "<div class='main_wrapper'>\
 			<div class='main'>\
 				<div id='"+site_tree_box_id+"' class='" + Components.tree_parent__class_name() + "'></div>\
@@ -968,7 +1028,7 @@ class Components{
 					+ Components._get_wrapper__loader(loader_box_id) +
 					"<div class='main_content'>\
 						<div class='add_case' id='" + content_box_id + "'></div>\
-						<div class='modal_wnd' id='" + modal_wnd_id + "'></div>\
+						<div class='modal_wnd'><div class='modal_wnd_wrapper' id='wrap' onclick='modalClose()'></div><div class='modal_wnd_inner' id='" + modal_wnd_id + "'></div></div>\
 					</div>\
 				</div>\
 			</div>\

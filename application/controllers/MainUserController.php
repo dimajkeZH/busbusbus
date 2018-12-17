@@ -13,6 +13,7 @@ class MainUserController extends UserController {
 				$this->model::CONTENT,
 				$this->model::USER_CHOICE,
 				$this->model::PAGELIST,
+				$this->model::NEWS_ON_INDEX,
 			]
 		);
 		if($content){
