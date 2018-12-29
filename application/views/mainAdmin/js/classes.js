@@ -372,11 +372,18 @@ class CMS_CORE{
 		let forms = document.querySelectorAll('#'+form_id),
 			data = new FormData(),
 			fields = {};
-		
+
 		let field, type, name, value;
 		let multitable_id, sub_multitable_id, tabel_id, images_id;
 
 		forms.forEach(function(form, index){
+			
+			let ID = form.querySelector('input[name=ID]');
+			if(ID){
+				fields['ID'] = ID.value;
+			}
+			//console.log('ID', fields['ID']);
+
 			form.querySelectorAll('.forma_group_item').forEach(function(item){
 				if(item.hasAttribute('data-table-id')){
 					tabel_id = item.getAttribute('data-table-id');
@@ -1204,7 +1211,8 @@ class Components{
 			cmsTitle = item.TITLE,
 			cmsDescr = '',
 			cmsParent = type == FIELD_TYPES.CMB() ? parent : null,
-			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null;
+			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null,
+			style = item.STYLE || null;
 
 		let events_str = '';
 		if(events != null){
@@ -1219,19 +1227,19 @@ class Components{
 
 		switch(type){
 			case FIELD_TYPES.TEXT():
-				return Components._get_html_field__text(cmsTitle, cmsDescr, '', variable, false, events_str);
+				return Components._get_html_field__text(cmsTitle, cmsDescr, '', variable, false, events_str, style);
 			case FIELD_TYPES.NUMBER():
-				return Components._get_html_field__number(cmsTitle, cmsDescr, '', variable, false, events_str);
+				return Components._get_html_field__number(cmsTitle, cmsDescr, '', variable, false, events_str, style);
 			case FIELD_TYPES.TEXT_AREA():
-				return Components._get_html_field__text_area(cmsTitle, cmsDescr, ' ', variable, false, events_str);
+				return Components._get_html_field__text_area(cmsTitle, cmsDescr, ' ', variable, false, events_str, style);
 			case FIELD_TYPES.NUMBER_BTN():
-				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, '', variable, false, events_str);
+				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, '', variable, false, events_str, style);
 			case FIELD_TYPES.FILE():
-				return Components._get_html_field__file(cmsTitle, cmsDescr, '', variable, false, events_str);
+				return Components._get_html_field__file(cmsTitle, cmsDescr, '', variable, false, events_str, style);
 			case FIELD_TYPES.CMB():
-				return Components._get_html_field__cmb(cmsTitle, cmsDescr, '', variable, false, events_str, cmsParent);
+				return Components._get_html_field__cmb(cmsTitle, cmsDescr, '', variable, false, events_str, style, cmsParent);
 			case FIELD_TYPES.CB():
-				return Components._get_html_field__cb(cmsTitle, cmsDescr, false, variable, false, events_str);
+				return Components._get_html_field__cb(cmsTitle, cmsDescr, false, variable, false, events_str, style);
 			case null:
 				return false;
 		}

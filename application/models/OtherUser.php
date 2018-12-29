@@ -51,12 +51,28 @@ class OtherUser extends User {
 	}
 
 	public function getBus($route){
-		$q = 'SELECT * FROM DATA_BUSES WHERE URI LIKE :URI UNION SELECT * FROM DATA_MINIVANS WHERE URI LIKE :URI';
 		$params = ['URI' => $route['param']];
-		$return['CONTENT'] = $this->db->row($q, $params);
-		if(count($return['CONTENT']) == 0){
+
+		$q = 'SELECT * FROM DATA_BUSES WHERE URI LIKE :URI';
+		$bus = $this->db->row($q, $params);
+		$q = 'SELECT * FROM DATA_MINIVANS WHERE URI LIKE :URI';
+		$minivan = $this->db->row($q, $params);
+
+		$is_bus = count($bus) > 0;
+		$is_minivan = count($minivan) > 0;
+
+		#debug([$bus, $minivan, $is_bus, $is_minivan]);
+
+		if($is_bus && !$is_minivan){
+			$return['CONTENT'] = $bus[0];
+		}elseif(!$is_bus && $is_minivan){
+			$return['CONTENT'] = $minivan[0];
+		}else{
 			return false;
 		}
+
+		$return['IS_BUS'] = $is_bus;
+		$return['IS_MINIVAN'] = $is_minivan;
 		return $return;
 	}
 

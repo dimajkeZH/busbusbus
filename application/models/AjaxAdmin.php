@@ -184,9 +184,8 @@ class AjaxAdmin extends Admin {
 
 	public function changeMinivans($post, $files){
 		if(!isset($post['ID'])){
-			return false;
+			$post['ID'] = 0;
 		};
-
 		$params = [
 			'TITLE' => $post['TITLE'],
 			'ID_COUNTRY' => $post['ID_COUNTRY'],
@@ -236,7 +235,7 @@ class AjaxAdmin extends Admin {
 	}
 
 	public function changeNews($post, $files){
-				if(!isset($post['ID'])){
+		if(!isset($post['ID'])){
 			return false;
 		};
 
@@ -700,7 +699,7 @@ class AjaxAdmin extends Admin {
 				break;
 		}
 
-		$q = 'INSERT INTO PAGES (ID_LOCATION, ID_VIEW, ID_PARENT, CAN_BE_SUPPLEMENTED, MAY_HAVE_THE_PARENT, URI, LOC_NUMBER, CHOICE_TITLE, HTML_TITLE, DESCR, IMAGE, IMAGE_SIGN, HTML_DESCR, HTML_KEYWORDS) VALUES (:ID_LOCATION, :ID_VIEW, :ID_PARENT, :CAN_BE_SUPPLEMENTED, :MAY_HAVE_THE_PARENT, :URI, :LOC_NUMBER, :CHOICE_TITLE, :HTML_TITLE, :DESCR, :IMAGE, :IMAGE_SIGN, :HTML_DESCR, :HTML_KEYWORDS)';
+		$q = 'INSERT INTO PAGES (ID_LOCATION, ID_VIEW, ID_PARENT, CAN_BE_SUPPLEMENTED, MAY_HAVE_THE_PARENT, URI, LOC_NUMBER, CHOICE_TITLE, HTML_TITLE, IMAGE, IMAGE_SIGN, HTML_DESCR, HTML_KEYWORDS) VALUES (:ID_LOCATION, :ID_VIEW, :ID_PARENT, :CAN_BE_SUPPLEMENTED, :MAY_HAVE_THE_PARENT, :URI, :LOC_NUMBER, :CHOICE_TITLE, :HTML_TITLE, :IMAGE, :IMAGE_SIGN, :HTML_DESCR, :HTML_KEYWORDS)';
 		$params = [
 			'HTML_TITLE'			=> isset($post['HTML_TITLE']) ? $post['HTML_TITLE'] : '',
 			'HTML_DESCR'			=> isset($post['HTML_DESCR']) ? $post['HTML_DESCR'] : '',
@@ -708,7 +707,6 @@ class AjaxAdmin extends Admin {
 			'ID_VIEW'				=> isset($post['ID_VIEW']) ? $post['ID_VIEW'] : '',
 			'URI'					=> isset($post['URI']) ? $post['URI'] : '',
 			'ID_PARENT'				=> isset($post['ID_PARENT']) ? $post['ID_PARENT'] : '',
-			'DESCR'					=> isset($post['DESCR']) ? $post['DESCR'] : '',
 			'ID_LOCATION'			=> $ID_LOCATION,
 			'CAN_BE_SUPPLEMENTED'	=> 0,
 			'MAY_HAVE_THE_PARENT'	=> 1,
@@ -718,6 +716,7 @@ class AjaxAdmin extends Admin {
 			'IMAGE_SIGN'			=> isset($post['IMAGE_SIGN']) ? $post['IMAGE_SIGN'] : '',
 		];
 
+		#debug([$this->db->return($q, $params), $q, $params]);
 		return $this->db->return($q, $params);
 	}
 	

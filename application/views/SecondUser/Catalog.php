@@ -43,7 +43,7 @@
 				<h3 class="catalog_item_title"><?php echo $val['TITLE'] ? 'Модели из '.$val['TITLE'] : ''; ?></h3>
 				<ul>
 					<?php foreach($val['LIST'] as $listkey => $listval): ?>
-						<?php if($listval['STATE_LINK']): ?>
+						<?php if($listval['URI']): ?>
 						<li class="catalog_item_link"><a href="/<?php echo $listval['URI'] ? $listval['URI'] : ''; ?>"><?php echo $listval['TITLE'] ? $listval['TITLE'] : ''; ?></a></li>
 						<?php else: ?>
 						<li class="catalog_item_link"><?php echo $listval['TITLE'] ? $listval['TITLE'] : ''; ?></li>
