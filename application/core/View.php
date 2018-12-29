@@ -44,11 +44,11 @@ class View {
 		exit;
 	}
 
-	public function renderAdmin($iscontent){
-		$content = '';
-		if($iscontent){
+	public function renderAdmin($vars = false){
+		if($vars){
 			$path = self::VIEW_DIR . $this->route['controller'] . '/' . $this->route['action'] . '.php';
 			#debug([$path, file_exists($path)]);
+			extract($vars);
 			if(file_exists($path)){
 				ob_start();
 				require $path;

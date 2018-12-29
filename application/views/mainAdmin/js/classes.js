@@ -234,7 +234,7 @@ class CMS_CORE{
 		this.is_logging = true;
 
 		this.content_box_id = 'content_box';
-		this.content_form_id = 'block_form';
+		this.content_form_id = 'data';
 
 		this.modal_wnd_id = 'modal_wnd';
 		this.modal_form_id = 'modal_form';
@@ -258,6 +258,7 @@ class CMS_CORE{
 			url, 
 			[], 
 			function success(data){
+				//console.log(data);
 				if(data.status){
 					callback(data.data);
 				}else{
@@ -265,14 +266,14 @@ class CMS_CORE{
 				}
 			},
 			function error(e){
-				//console.log(e);
+				console.log(e);
 				EASY_CMS.load_filed(component_name, 'Failed to send api script');
 			}
 		);
 	}
 
-	ajaxSend(url, btn = null){
-		if(btn.classList.contains('remove')){
+	ajaxSend(url, btn = null, is_parent_remove = false){
+		if(btn && btn.classList.contains('remove')){
 			if(!confirm('Вы уверены, что хотите удалить это ?')){
 				return false;
 			}
@@ -286,11 +287,48 @@ class CMS_CORE{
 			[], 
 			function success(data){
 				THIS.show_message(data.message, data.status);
-				if(btn != null){
+				if(btn && is_parent_remove){
 					let parent_for_remove = btn.parentNode.parentNode;
 					parent_for_remove.remove();
 				}
-				THIS.content_loader.hide();
+				if(data.data.redirect){
+					setTimeout(function(){
+						window.location = data.data.redirect;
+					}, 600);
+				}else{
+					THIS.content_loader.hide();
+				}
+			},
+			function error(e){
+				console.log(e);
+				THIS.show_message('Failed send api script', false);
+				setTimeout(function(){
+					THIS.content_loader.hide();
+				}, 500)
+			}
+		);
+		return false;
+	}
+
+	dataSend(url){
+		console.log('data send: ' + url);
+		this.content_loader.show();
+		let ajax_data = EASY_CMS.getData(this.content_form_id);
+		let THIS = this;
+		new api('api').send(
+			url, 
+			ajax_data, 
+			function success(data){
+				THIS.show_message(data.message, data.status);
+				if(data.data.ID){
+					let cur_location = window.location.pathname + '/' + data.data.ID + window.location.search;
+					setTimeout(function(){
+						window.location = cur_location;
+					}, 600);
+				}else{
+					THIS.refresh_tree();
+					THIS.content_loader.hide();
+				}
 			},
 			function error(e){
 				console.log(e);
@@ -306,7 +344,6 @@ class CMS_CORE{
 	modalSend(url){
 		console.log('modal send: ' + url);
 		let modal_data = EASY_CMS.getData(this.modal_form_id);
-
 		let THIS = this;
 		new api('api').send(
 			url, 
@@ -316,6 +353,7 @@ class CMS_CORE{
 				if(data.status){
 					modalClose();
 				}
+				THIS._refresh_content(window.location.pathname + window.location.search, false);
 				//loader hide
 			},
 			function error(e){
@@ -326,30 +364,86 @@ class CMS_CORE{
 				}, 500)
 			}
 		);
-		this._refresh_content(window.location.pathname + window.location.search, false);
 		return false;
 	}
 
 
 	static getData(form_id){
-		let form = document.getElementById(form_id),
+		let forms = document.querySelectorAll('#'+form_id),
 			data = new FormData(),
 			fields = {};
-		let form_data = new FormData(form);
-		for(let pair of form_data.entries()) {
-			let name = pair[0],
-				field_type = form.querySelector('input[name='+ name +'], select[name='+ name +'], textarea[name='+ name +']').type,
-				value = pair[1];
-			if(field_type === 'file'){
-				if(value){
-					data.append(pair[0], pair[1]);
+		
+		let field, type, name, value;
+		let multitable_id, sub_multitable_id, tabel_id, images_id;
+
+		forms.forEach(function(form, index){
+			form.querySelectorAll('.forma_group_item').forEach(function(item){
+				if(item.hasAttribute('data-table-id')){
+					tabel_id = item.getAttribute('data-table-id');
+					fields['TABLE'] = {
+						'ID': tabel_id,
+						'DATA': EASY_CMS._get_cells_data(item),
+					};
+					console.log(fields['TABLE']);
+				}else if(item.hasAttribute('data-multitable-id')){
+					multitable_id = item.getAttribute('data-multitable-id');
+					sub_multitable_id = item.getAttribute('data-multitable-component-id');
+					fields['MULTITABLE'] = EASY_CMS._add_multitable(fields['MULTITABLE'], multitable_id, sub_multitable_id, item);
+					console.log(fields['MULTITABLE']);
+				}else if(item.hasAttribute('data-images-id')){
+					images_id = item.getAttribute('data-images-id');
+					fields['IMAGES'] = [];
+					console.log(fields['IMAGES']);
+				}else{
+					field = item.querySelector('input, select, textarea');
+
+					if(field.disabled) return;
+
+					type = field.type;
+					name = field.name;
+					if(type == 'file'){
+						value = field.files[0];
+						if(value) data.append(name, value);
+					}else if(type == 'checkbox'){
+						value = field.checked ? 1 : 0;
+						fields[name] = value;
+					}else{
+						value = field.value;
+						fields[name] = value;
+					}
 				}
-			}else{
-				fields[pair[0]] = pair[1];
-			}
-		}
+			});
+		});
+
 		data.append('DATA', JSON.stringify(fields));
 		return data;
+	}
+
+	static _add_multitable(arr, id, table_id, item){
+		let cells_data = EASY_CMS._get_cells_data(item);
+		if(arr){
+			arr['TABLES'][arr['TABLES'].length] = {
+				'ID': table_id,
+				'DATA': cells_data,
+			}
+		}else{
+			arr = {
+				'ID': id,
+				'TABLES': [{
+					'ID': table_id,
+					'DATA': cells_data,
+				}],
+			};
+		}
+		return arr;
+	}
+
+	static _get_cells_data(item){
+		let data = {};
+		item.querySelectorAll('input').forEach(function(input, index){
+			data[input.name] = input.value;
+		});
+		return JSON.stringify(data);
 	}
 
 
@@ -555,6 +649,11 @@ class EASY_CMS extends CMS_CORE{
 	loading_content(){
 		this._refresh_tree();
 		this._refresh_content(window.location.pathname + window.location.search);
+	}
+
+	refresh_tree(){
+		this._refresh_tree();
+		this.load();
 	}
 
 	load(){
@@ -857,35 +956,34 @@ class Components{
 				parent = null;
 			});
 		}
+		let common_container = Components._get_field_container(common.join(''), 'Общие');
 
-		if(content && content.length > 0){
-			content.forEach(function(item, index){
-				if(item.CMS_TYPE__PARENT_BOX && item.CMS_TYPE__PARENT_BOX != ''){
-					parent = data[item.CMS_TYPE__PARENT_BOX];
-				}
-				content[index] = Components._get_html_field(item, parent);
-				if(content[index] == 'false' || content[index] == false){
-					content[index] = '';
-				}
-				parent = null;
-			});
+		let content_container = '';
+		if(content){
+			for(let group_index in content){
+				content[group_index].forEach(function(field_item, field_index){
+					if(field_item.CMS_TYPE__PARENT_BOX && field_item.CMS_TYPE__PARENT_BOX != ''){
+						parent = data[field_item.CMS_TYPE__PARENT_BOX];
+					}
+					content[group_index][field_index] = Components._get_html_field(field_item, parent);
+					if(content[group_index][field_index] == 'false' || content[group_index][field_index] == false){
+						content[group_index][field_index] = '';
+					}
+					parent = null;
+				});
+				content[group_index] = Components._get_field_container(content[group_index].join(''), 'Контент ' + group_index);
+			}
+			content_container = Object.keys(content).map(key => content[key]).join('');
 		}
 
-		return "<div class='main_content_head'><p class='main_content_head_title'>" + title + "</p><div id='content_btn' class='buttons'>" + buttons + "</div></div>\
-		<div class='main_content_info'>\
-			<form id='data'  class='block_form'>\
-				<div class='block_settings'><div class='buttons'><button class='add block_hide' onclick='return hideThis(this)'>Cвернуть</button></div></div><p class='form_title'>Общие</p>\
-				<div class='form_content'>\
-					<input type='text' name='ID' value='" + data.ID + "' style='display:none;'>"
-					+ common.join('') +
-				"</div>\
-			</form><form id='data'  class='block_form'>\
-				<div class='block_settings'><div class='buttons'><button class='add block_hide' onclick='return hideThis(this)'>Cвернуть</button></div></div><p class='form_title'>Контент</p>\
-				<div class='form_content'>"
-					+ content.join('') +
-				"</div>\
-			</form>\
-		</div>";
+		return	"<div class='main_content_head'>\
+					<p class='main_content_head_title'>" + title + "</p>\
+					<div id='content_btn' class='buttons'>" + buttons + "</div>\
+				</div>\
+				<div class='main_content_info'>"
+					+ common_container
+					+ content_container +
+				'</div>';
 	}
 	
 
@@ -894,13 +992,14 @@ class Components{
 		//console.log(columns);
 		//console.log(rows);
 		//console.log(buttons);
-		let thead = '';
+		let thead = '',
+			tbody = '';
+
 		columns.forEach(function(item, index){
 			thead += "<td>" + item.NAME + "</td>";
 		});
 		thead = '<tr><td>#</td>' + thead + '</tr>';
 
-		let tbody = '';
 		if(rows && rows.length > 0){
 			rows.forEach(function(item, index){
 				let tr = '<td>' + (index + 1) + '</td>';
@@ -940,12 +1039,22 @@ class Components{
 
 		return '<div class="main_content_head"><p class="main_content_head_title">' + title + '</p><div class="buttons">' + buttons + '</div></div>\
 				<div class="main_content_info"><form class="general block_form" style="text-align:center;"><div class="table_info forma_group">\
-				<table><tbody>' + thead + tbody + '</tbody></table>\
+				<table><thead>' + thead + '</thead><tbody>' + tbody + '</tbody></table>\
 				</div></form></div>';
 	}
 
-	static _get_page__config(){
-		return '';
+	static _get_field_container(content = '', title = ''){
+		return	'<form id="data" class="block_form">\
+				<div class="block_settings">\
+					<div class="buttons">\
+						<button class="add block_hide" onclick="return hideThis(this)">Cвернуть</button>\
+					</div>\
+				</div>\
+				<p class="form_title">' + title + '</p>\
+				<div class="form_content">'
+				+ content +
+				'</div>\
+			</form>';
 	}
 
 
@@ -1050,8 +1159,6 @@ class Components{
 			cmsDescr = item.CMS_DESCR,
 			cmsParent = type == FIELD_TYPES.CMB() ? parent : null,
 			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null;
-		let startBox = "<div class='forma_group'><p>" + cmsTitle + "</p>",
-			endBox = "<p class='forma_group_item_description'>" + cmsDescr + "</p></div></div>";
 
 		let events_str = '';
 		if(events != null){
@@ -1066,19 +1173,25 @@ class Components{
 
 		switch(type){
 			case FIELD_TYPES.TEXT():
-				return startBox + Components._get_html_field__text(value, variable, disabled, events_str) + endBox;
+				return Components._get_html_field__text(cmsTitle, cmsDescr, value, variable, disabled, events_str);
 			case FIELD_TYPES.NUMBER():
-				return startBox + Components._get_html_field__number(value, variable, disabled, events_str) + endBox;
+				return Components._get_html_field__number(cmsTitle, cmsDescr, value, variable, disabled, events_str);
 			case FIELD_TYPES.TEXT_AREA():
-				return startBox + Components._get_html_field__text_area(value, variable, disabled, events_str) + endBox;
+				return Components._get_html_field__text_area(cmsTitle, cmsDescr, value, variable, disabled, events_str);
 			case FIELD_TYPES.NUMBER_BTN():
-				return startBox + Components._get_html_field__number_btn(value, variable, disabled, events_str) + endBox;
+				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, value, variable, disabled, events_str);
 			case FIELD_TYPES.FILE():
-				return startBox + Components._get_html_field__file(value, variable, disabled, events_str) + endBox;
+				return Components._get_html_field__file(cmsTitle, cmsDescr, value, variable, disabled, events_str);
 			case FIELD_TYPES.CMB():
-				return startBox + Components._get_html_field__cmb(value, variable, disabled, events_str, cmsParent) + endBox;
+				return Components._get_html_field__cmb(cmsTitle, cmsDescr, value, variable, disabled, events_str, cmsParent);
 			case FIELD_TYPES.CB():
-				return startBox + Components._get_html_field__cb() + endBox;
+				return Components._get_html_field__cb(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+			case FIELD_TYPES.TABLE():
+				return Components._get_html_field__table(value.ID || 0, value.DATA || [[]], value.ROWS || 1, value.COLS || 1);
+			case FIELD_TYPES.MULTITABLE():
+				return Components._get_html_field__multitable(value.ID || 0, value.TABLES || []);
+			case FIELD_TYPES.IMAGES():
+				return Components._get_html_field__images(value);
 			case null:
 				return false;
 		}
@@ -1088,10 +1201,9 @@ class Components{
 		let type = item.TYPE || null,
 			variable = item.NAME,
 			cmsTitle = item.TITLE,
+			cmsDescr = '',
 			cmsParent = type == FIELD_TYPES.CMB() ? parent : null,
 			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null;
-		let startBox = "<div class='forma_group'><p>" + cmsTitle + "</p>",
-			endBox = "</div></div>";
 
 		let events_str = '';
 		if(events != null){
@@ -1106,45 +1218,67 @@ class Components{
 
 		switch(type){
 			case FIELD_TYPES.TEXT():
-				return startBox + Components._get_html_field__text('', variable, false, events_str) + endBox;
+				return Components._get_html_field__text(cmsTitle, cmsDescr, '', variable, false, events_str);
 			case FIELD_TYPES.NUMBER():
-				return startBox + Components._get_html_field__number('', variable, false, events_str) + endBox;
+				return Components._get_html_field__number(cmsTitle, cmsDescr, '', variable, false, events_str);
 			case FIELD_TYPES.TEXT_AREA():
-				return startBox + Components._get_html_field__text_area(' ', variable, false, events_str) + endBox;
+				return Components._get_html_field__text_area(cmsTitle, cmsDescr, ' ', variable, false, events_str);
 			case FIELD_TYPES.NUMBER_BTN():
-				return startBox + Components._get_html_field__number_btn('', variable, false, events_str) + endBox;
+				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, '', variable, false, events_str);
 			case FIELD_TYPES.FILE():
-				return startBox + Components._get_html_field__file('', variable, false, events_str) + endBox;
+				return Components._get_html_field__file(cmsTitle, cmsDescr, '', variable, false, events_str);
 			case FIELD_TYPES.CMB():
-				return startBox + Components._get_html_field__cmb('', variable, false, events_str, cmsParent) + endBox;
+				return Components._get_html_field__cmb(cmsTitle, cmsDescr, '', variable, false, events_str, cmsParent);
 			case FIELD_TYPES.CB():
-				return startBox + Components._get_html_field__cb() + endBox;
+				return Components._get_html_field__cb(cmsTitle, cmsDescr, false, variable, false, events_str);
 			case null:
 				return false;
 		}
 	}
 
-	static _get_html_field__text(value, varName, disabled, events){
-		return "<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + events + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "'>";
+	/* BOX FOR SIMPLE FIELDS */
+	static __get_html_field__startBox(text = ''){
+		return "<div class='forma_group'><p>" + text + "</p>";
+	}
+	static __get_html_field__endBox(text){
+		return (text ? ("<p class='forma_group_item_description'>" + text + "</p>") : '') + "</div></div>";
+	}
+	/* BOX FOR SIMPLE FIELDS END */
+
+
+
+	/* SIMPLE FIELDS */
+	static _get_html_field__text(textTitle, textDescr, value, varName, disabled, events){
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "'>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__number(value, varName, disabled, events){
-		return "<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + events + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'>";
+	static _get_html_field__number(textTitle, textDescr, value, varName, disabled, events){
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__text_area(value, varName, disabled, events){
-		return "<div class='forma_group_item textarea'><textarea " + (disabled ? 'disabled ': '') + events + "autocomplete='off' name='" + (!disabled ? varName : '') + "'>" + (value != '' ? value : '<p></p>') + "</textarea>";
+	static _get_html_field__text_area(textTitle, textDescr, value, varName, disabled, events){
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item textarea'><textarea " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' name='" + (!disabled ? varName : '') + "'>" + (value != '' ? value : '<p></p>') + "</textarea>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__number_btn(value, varName, disabled, events){
-		return "<div class='forma_group_item text_btn'><input " + (disabled ? 'disabled ': '') + events + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'><div class='text_btns'><div class='btn_next' onclick='plus(this)'><p>+</p></div><div class='btn_prev' onclick='minus(this)'><p>-</p></div></div>";
+	static _get_html_field__number_btn(textTitle, textDescr, value, varName, disabled, events){
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item text_btn'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'><div class='text_btns'><div class='btn_next' onclick='plus(this)'><p>+</p></div><div class='btn_prev' onclick='minus(this)'><p>-</p></div></div>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__file(value, varName, disabled, events){
-		return "<div class='forma_group_item file'><input " + (disabled ? 'disabled ': '') + events + "autocomplete='off' type='file' name='" + (!disabled ? varName : '') + "' title='" + value + "'>";
+	static _get_html_field__file(textTitle, textDescr, value, varName, disabled, events){
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item file'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='file' name='" + (!disabled ? varName : '') + "' title='" + value + "'>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__cmb(value, varName, disabled, events, parent){
+	static _get_html_field__cmb(textTitle, textDescr, value, varName, disabled, events, parent){
 		let selected = ' selected',
 			curselected = '';
 		if(parent != null){
@@ -1160,11 +1294,142 @@ class Components{
 		}else{
 			parent = '';
 		}
-		return "<div class='forma_group_item select'><select " + (disabled ? 'disabled ': '') + events + "name='" + (!disabled ? varName : '') + "'>" + parent + "</select>";
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item select'><select " + (disabled ? 'disabled ': '') + (events ? events : '') + "name='" + (!disabled ? varName : '') + "'>" + parent + "</select>" +
+				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__cb(){
-		return '<div>';
+	static _get_html_field__cb(textTitle, textDescr, value, varName, disabled, events){
+		let checked;
+		if(value && value == 1){
+			checked = ' checked';
+		}else{
+			checked = '';
+		}
+
+		return	Components.__get_html_field__startBox(textTitle) +
+				"<div class='forma_group_item checkbox'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + " type='checkbox' name='" + varName + "'" + checked + ">" +
+				Components.__get_html_field__endBox(textDescr);
+	}
+	/* SIMPLE FIELDS END */
+
+
+
+	static _get_html_field__table(table_id = 0, table = [[]], rows = 1, cols = 1, multitable_component = false, multitable_id = 0){
+		let body = '';
+
+		for(let row_index = 1; row_index <= rows; row_index++){
+			body += '<tr><td><button class="remove" onclick="return tableRow_Delete(this, ' + table_id + ')">X</button></td>';
+			for(let col_index = 1; col_index <= cols; col_index++){
+				let val = table[row_index] && table[row_index][col_index] ? table[row_index][col_index] : '';
+				body += '<td><input autocomplete="off" name="CELL_TABLE' + table_id + '_' + (row_index) + '_' + (col_index) + '" type="text" value="' + val + '"></td>';
+			}
+			body += '</tr>';
+		}
+
+		return '<div class="table_info forma_group"><div class="table_info_btns"><button class="add" onclick="return tableRow_Add(this, ' + table_id + ')">Добавить Строку</button><button class="add" onclick="return tableCol_Add(this, ' + table_id + ')">Добавить Столбец</button></div>\
+			<table ' + (multitable_component ? 'data-multitable-id="' + multitable_id + '" data-multitable-component-id="' + table_id + '"' : 'data-table-id="'+table_id+'"') + ' class="forma_group_item">\
+				<tbody>\
+					<tr class="table_info_head">\
+						<th></th>'
+						+ ('<th><button class="remove" onclick="return tableCol_Delete(this, ' + table_id + ')">X</button></th>').repeat(cols) +
+					'</tr>'
+					+ body +
+				'</tbody>\
+			</table>\
+		</div><hr>';
+	}
+
+	static _get_html_field__multitable(multitable_id = 0, multitable = []){
+		let content = '<hr>';
+		if(multitable.length > 0){
+			multitable.forEach(function(table, table_index){
+				//console.log(table);
+				let table_data = table.DATA || [[]],
+					table_id = table.ID || 0,
+					rows = table.ROWS || 1,
+					cols = table.COLS || 1,
+					subtitle = table.SUBTITLE || '';
+				//console.log(table_index, Components._get_html_field__table(table_index, table_data, rows, cols, true, multitable_id));
+				content += 
+					Components._get_html_field__text('Подзаголовок мультитаблицы', '', subtitle, 'TITLE_TABLE' + table_index) +
+					Components._get_html_field__table(table_index, table_data, rows, cols, true, multitable_id);
+			});
+		}else{
+			content += Components._get_html_field__text('Подзаголовок мультитаблицы', '', '', 'TITLE_TABLE0') + Components._get_html_field__table(0, [[]], 1, 1, true, 0);
+		}
+		
+		content += '<div class="forma_group">\
+			<p>Добавление таблицы</p>\
+			<div class="forma_group_item add_table">\
+				<div class="add_table_inputs">\
+					<label>\
+						Количество строк:\
+						<input name="rowCount" type="text" value="1">\
+					</label>\
+					<label>\
+						Количество столбцов:\
+						<input name="colCount" type="text" value="1">\
+					</label>\
+				</div>\
+				<div class="add_table_btn">\
+					<button class="add" onclick="return addMultiTable(this)">Добавить</button>\
+				</div>\
+			</div>\
+		</div>';
+		return content;
+	}
+
+
+
+	static _get_html_field__image(id_image = 0, subtitle_val = '', subtitle_var = '', file_val = '', file_var = '', sign_val = '', sign_var = ''){
+		let index = id_image + 1;
+		let subtitle_text = 'Подзаголовок картинки ' + index,
+			file_text = 'Картинка ' + index,
+			sign_text = 'Подпись картинки ' + index;
+		subtitle_var += id_image;
+		file_var += id_image;
+		sign_var += id_image;
+
+		return	'' +
+				Components._get_html_field__text(subtitle_text, '', subtitle_val, subtitle_var)+
+				Components._get_html_field__file(file_text, '', file_val, file_var) +
+				Components._get_html_field__text_area(sign_text, '', sign_val, sign_var) + 
+				'<hr>';
+	}
+
+	static _get_html_field__images(images = []){
+		let content = '<hr>';
+		if(images.length > 0){
+			images.forEach(function(image, image_index){
+				let link = image.LINK || '',
+					subtitle = image.SUBTITLE || '',
+					sign = image.SIGN || '';
+
+				content += Components._get_html_field__image(image_index,
+					subtitle, 'IMAGES_IMAGE_SUBTITLE',
+					link, 'IMAGES_IMAGE_LINK',
+					sign, 'IMAGES_IMAGE_SIGN');
+
+			});
+		}else{
+			content += Components._get_html_field__image(0,
+				'', 'IMAGES_IMAGE_SUBTITLE',
+				'', 'IMAGES_IMAGE_LINK',
+				'', 'IMAGES_IMAGE_SIGN');
+		}
+
+		content +=
+				'<div class="forma_group">\
+					<p>Добавление Картинки</p>\
+					<div class="forma_group_item add_table">\
+						<div class="add_table_inputs"><label for="">Количество:<input name="imgCount" type="text" value="1"></label></div>\
+						<div class="add_table_btn"><button class="add" onclick="return addImage(this)">Добавить</button></div>\
+					</div>\
+				</div>\
+			</div>';
+
+		return content;
 	}
 	/* FIELDS END */
 }
@@ -1187,6 +1452,10 @@ class FIELD_TYPES{
 	static FILE(){		return 'FILE'; }
 	static CMB(){		return 'CMB'; }
 	static CB(){		return 'CB'; }
+
+	static TABLE(){		return 'TABLE'; }
+	static MULTITABLE(){return 'MULTITABLE'; }
+	static IMAGES(){	return 'IMAGES'; }
 }
 
 
@@ -1201,7 +1470,7 @@ class Cookie{
 	}
 
 	static get(name = ''){
-		var matches = document.cookie.match(new RegExp(
+		let matches = document.cookie.match(new RegExp(
 			"(?:^|; )" + name.replace(/([\.$?*|{}\(\)\[\]\\\/\+^])/g, '\\$1') + "=([^;]*)"
 		));
 		return matches ? decodeURIComponent(matches[1]) : undefined;
@@ -1216,10 +1485,10 @@ class Cookie{
 	static _setCookie(name, value, options){
 		options = options || {};
 
-		var expires = options.expires;
+		let expires = options.expires;
 
 		if (typeof expires == "number" && expires) {
-			var d = new Date();
+			let d = new Date();
 			d.setTime(d.getTime() + expires * 1000);
 			expires = options.expires = d;
 		}
@@ -1229,11 +1498,11 @@ class Cookie{
 
 		value = encodeURIComponent(value);
 
-		var updatedCookie = name + "=" + value;
+		let updatedCookie = name + "=" + value;
 
-		for (var propName in options) {
+		for (let propName in options) {
 			updatedCookie += "; " + propName;
-			var propValue = options[propName];
+			let propValue = options[propName];
 			if (propValue !== true) {
 				updatedCookie += "=" + propValue;
 			}

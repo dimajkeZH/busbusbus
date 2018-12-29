@@ -1,11 +1,11 @@
 		<div class="services_other_header">
-			<?php if(isset($CONTENT['TITLE'])AND($CONTENT['TITLE'])): ?>
+			<?php if(isset($CONTENT['HEADER_TITLE'])): ?>
 			<div class="services_other_title">
-				<h1><?php echo $CONTENT['TITLE']; ?></h1>
+				<h1><?php echo $CONTENT['HEADER_TITLE']; ?></h1>
 				<div class="services_other_line"></div>
 			</div>
 			<?php endif; ?>
-			<?php if(!empty($CONTENT['LEFT_IMAGE']) || !empty($CONTENT['RIGHT_IMAGE']) || !empty($CONTENT['MIDDLE_IMAGE'])): ?>
+			<?php if(!empty($CONTENT['HEADER_LEFT_IMAGE']) || !empty($CONTENT['HEADER_RIGHT_IMAGE']) || !empty($CONTENT['HEADER_MIDDLE_IMAGE'])): ?>
 			<div class="bus_img">
 				<img src="../../../assets/img/static/bus_min.png" alt="">
 			</div>
@@ -16,38 +16,38 @@
 			</div>
 			<div class="services_other_items">
 				<div class="services_other_item">
-					<?php if(isset($CONTENT['LEFT_IMAGE'])AND($CONTENT['LEFT_IMAGE'])): ?>
+					<?php if(isset($CONTENT['HEADER_LEFT_IMAGE'])AND($CONTENT['HEADER_LEFT_IMAGE'])): ?>
 					<div class="services_other_item_img">
-						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['LEFT_IMAGE'].'.png"'; ?> alt="">
+						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['HEADER_LEFT_IMAGE'].'.png"'; ?> alt="">
 					</div>
 					<?php endif; ?>
-					<?php if(isset($CONTENT['LEFT_IMAGE_SIGN'])AND($CONTENT['LEFT_IMAGE_SIGN'])): ?>
+					<?php if(isset($CONTENT['HEADER_LEFT_IMAGE_SIGN'])AND($CONTENT['HEADER_LEFT_IMAGE_SIGN'])): ?>
 					<div class="services_other_item_text">
-						<p><?php echo $CONTENT['LEFT_IMAGE_SIGN']; ?></p>
+						<p><?php echo $CONTENT['HEADER_LEFT_IMAGE_SIGN']; ?></p>
 					</div>
 					<?php endif; ?>
 				</div>
 				<div class="services_other_item">
-					<?php if(isset($CONTENT['MIDDLE_IMAGE'])AND($CONTENT['MIDDLE_IMAGE'])): ?>
+					<?php if(isset($CONTENT['HEADER_MIDDLE_IMAGE'])AND($CONTENT['HEADER_MIDDLE_IMAGE'])): ?>
 					<div class="services_other_item_img">
-						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['MIDDLE_IMAGE'].'.png"'; ?> alt="">
+						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['HEADER_MIDDLE_IMAGE'].'.png"'; ?> alt="">
 					</div>
 					<?php endif; ?>
-					<?php if(isset($CONTENT['MIDDLE_IMAGE_SIGN'])AND($CONTENT['MIDDLE_IMAGE_SIGN'])): ?>
+					<?php if(isset($CONTENT['HEADER_MIDDLE_IMAGE_SIGN'])AND($CONTENT['HEADER_MIDDLE_IMAGE_SIGN'])): ?>
 					<div class="services_other_item_text">
-						<p><?php echo $CONTENT['MIDDLE_IMAGE_SIGN']; ?></p>
+						<p><?php echo $CONTENT['HEADER_MIDDLE_IMAGE_SIGN']; ?></p>
 					</div>
 					<?php endif; ?>
 				</div>
 				<div class="services_other_item">
-					<?php if(isset($CONTENT['RIGHT_IMAGE'])AND($CONTENT['RIGHT_IMAGE'])): ?>
+					<?php if(isset($CONTENT['HEADER_RIGHT_IMAGE'])AND($CONTENT['HEADER_RIGHT_IMAGE'])): ?>
 					<div class="services_other_item_img">
-						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['RIGHT_IMAGE'].'.png"'; ?> alt="">
+						<img src=<?php echo '"/assets/img/templates/header_page/'.$CONTENT['HEADER_RIGHT_IMAGE'].'.png"'; ?> alt="">
 					</div>
 					<?php endif; ?>
-					<?php if(isset($CONTENT['RIGHT_IMAGE_SIGN'])AND($CONTENT['RIGHT_IMAGE_SIGN'])): ?>
+					<?php if(isset($CONTENT['HEADER_RIGHT_IMAGE_SIGN'])AND($CONTENT['HEADER_RIGHT_IMAGE_SIGN'])): ?>
 					<div class="services_other_item_text">
-						<p><?php echo $CONTENT['RIGHT_IMAGE_SIGN']; ?></p>
+						<p><?php echo $CONTENT['HEADER_RIGHT_IMAGE_SIGN']; ?></p>
 					</div>
 					<?php endif; ?>
 				</div>
@@ -66,15 +66,15 @@
 
 		<div class="table_type_one">
 	<div class="table_info">
-		<?php if(isset($CONTENT['TITLE'])AND($CONTENT['TITLE']!='')): ?>
-		<h1 	class="table_info_title"><?php echo $CONTENT['TITLE']; ?></h1>
+		<?php if(isset($CONTENT['MULTITABLE_TEXT_TITLE'])AND($CONTENT['MULTITABLE_TEXT_TITLE']!='')): ?>
+		<h1 	class="table_info_title"><?php echo $CONTENT['MULTITABLE_TEXT_TITLE']; ?></h1>
 		<div class="table_line"></div>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['DESCR'])AND($CONTENT['DESCR']!='')): ?>
-		<p class="table_info_main_text"><?php echo $CONTENT['DESCR']; ?></p>
+		<?php if(isset($CONTENT['MULTITABLE_TEXT_DESCR'])AND($CONTENT['MULTITABLE_TEXT_DESCR']!='')): ?>
+		<p class="table_info_main_text"><?php echo $CONTENT['MULTITABLE_TEXT_DESCR']; ?></p>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['SUBTITLE'])AND($CONTENT['SUBTITLE']!='')): ?>
-		<p class="table_info_title_type_two"><?php echo $CONTENT['SUBTITLE']; ?></p>
+		<?php if(isset($CONTENT['MULTITABLE_TEXT_SUBTITLE'])AND($CONTENT['MULTITABLE_TEXT_SUBTITLE']!='')): ?>
+		<p class="table_info_title_type_two"><?php echo $CONTENT['MULTITABLE_TEXT_SUBTITLE']; ?></p>
 		<?php endif; ?>
 	</div>
 	<div class="table_type_one_info" id="tabs">
@@ -127,23 +127,23 @@
 
 <div class="table_type_two">
 	<div class="table_info">
-		<?php if(isset($CONTENT['TITLE'])AND($CONTENT['TITLE']!='')): ?>
-		<h2 class="table_info_title"><?php echo $CONTENT['TITLE']; ?></h2>
+		<?php if(isset($CONTENT['TABLE_TITLE']) && ($CONTENT['TABLE_TITLE']!='')): ?>
+		<h2 class="table_info_title"><?php echo $CONTENT['TABLE_TITLE']; ?></h2>
 		<div class="table_line"></div>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['SUBTITLE'])AND($CONTENT['SUBTITLE']!='')): ?>
-		<p class="table_info_title_type_two"><?php echo $CONTENT['SUBTITLE']; ?></p>
+		<?php if(isset($CONTENT['TABLE_SUBTITLE']) && ($CONTENT['TABLE_SUBTITLE']!='')): ?>
+		<p class="table_info_title_type_two"><?php echo $CONTENT['TABLE_SUBTITLE']; ?></p>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['DESCR'])AND($CONTENT['DESCR']!='')): ?>
-		<p class="table_info_main_text"><?php echo $CONTENT['DESCR']; ?></p>
+		<?php if(isset($CONTENT['TABLE_DESCR']) && ($CONTENT['TABLE_DESCR']!='')): ?>
+		<p class="table_info_main_text"><?php echo $CONTENT['TABLE_DESCR']; ?></p>
 		<?php endif; ?>
 	</div>
 	<div class="table_type_two_info">
-		<?php if(isset($DATA)AND(count($DATA)>0)): ?>
+		<?php if(isset($CONTENT['TABLE']) && (count($CONTENT['TABLE'])>0)): ?>
 		<div class="table_type_two_info_table">
 			<table>
 				<?php
-				foreach($DATA as $key => $val){
+				foreach($CONTENT['TABLE'] as $key => $val){
 					$NEWDATA[$val['ROW']][$val['COL']] = $val['VAL'];
 				}
 				for($x = 1; $x <= count($NEWDATA); $x++){
@@ -176,11 +176,11 @@
 
 
 <div class="text_wrapper">
-	<?php if(isset($CONTENT['TITLE'])AND($CONTENT['TITLE']!='')): ?>
-	<h2 class="text_title"><?php  echo $CONTENT['TITLE']; ?></h2>
+	<?php if(isset($CONTENT['TEXT_TITLE'])AND($CONTENT['TEXT_TITLE']!='')): ?>
+	<h2 class="text_title"><?php  echo $CONTENT['TEXT_TITLE']; ?></h2>
 	<div class="main_line"></div>
 	<?php endif; ?>
-	<?php if(isset($CONTENT['TEXT'])AND($CONTENT['TEXT']!='')): ?>
-	<div class="text"><?php  echo $CONTENT['TEXT']; ?></div>
+	<?php if(isset($CONTENT['TEXT_CONTENT'])AND($CONTENT['TEXT_CONTENT']!='')): ?>
+	<div class="text"><?php  echo $CONTENT['TEXT_CONTENT']; ?></div>
 	<?php endif; ?>
 </div>

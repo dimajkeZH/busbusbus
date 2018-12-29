@@ -15,6 +15,9 @@ class AjaxAdminController extends AdminController {
 	const MESSAGE__NO_VALUES = 'Нет параметров';
 	const MESSAGE__BAD_VALUES = 'Не все параметры заполнены правильно';
 
+	const MESSAGE__ADD_GOOD = 'Данные успешно добавлены';
+	const MESSAGE__ADD_BAD = 'Добавление данных не произошло';
+
 	const MESSAGE__CHANGE_GOOD = 'Данные успешно изменены';
 	const MESSAGE__CHANGE_BAD = 'Изменение данных не произошло';
 
@@ -60,44 +63,30 @@ class AjaxAdminController extends AdminController {
 		}
 	}
 
-	public function savePagegrAction(){
-		$this->settings();
-		if($this->post){
-			if($this->model->verPageGroups($this->post)){
-				if($this->model->savePageGroups($this->post)){
-					$this->model->message(true, self::MESSAGE__CHANGE_GOOD);
-				}$this->model->message(false, self::MESSAGE__CHANGE_BAD);
-			}$this->model->message(false, self::MESSAGE__BAD_VALUES);
-		}else{
-			$this->model->message(false, self::MESSAGE__NO_VALUES);
-		}
-	}
+
+
 
 	public function savePagesAction(){
 		$this->settings();
-		if(isset($this->post)){
-			if($this->model->verSavePages($this->post)){
-				$ID = $this->model->savePages($this->post, $this->files);
-				if($ID){
-					$this->model->updCron();
-					$this->model->message(true, self::MESSAGE__CHANGE_GOOD, ['ID' => $ID]);
-				}$this->model->message(false, self::MESSAGE__CHANGE_BAD);
-			}$this->model->message(false, self::MESSAGE__BAD_VALUES);
-		}else{
-			$this->model->message(false, self::MESSAGE__NO_VALUES);
-		}
+		if($this->model->savePages($this->route, $this->post, $this->files)){
+			$this->model->message(true, self::MESSAGE__CHANGE_GOOD);
+		}$this->model->message(false, self::MESSAGE__CHANGE_BAD);
 	}
 
 	public function delPagesAction(){
 		$this->settings();
-		if($this->model->verPages_del($this->route)){
-			if($this->model->delPages($this->route)){
-				$this->model->updCron();
-				$this->model->message(true, self::MESSAGE__DELETE_GOOD);
-			}$this->model->message(false, self::MESSAGE__DELETE_BAD);
-		}$this->model->message(false, self::MESSAGE__BAD_VALUES);
+		if($this->model->delPages($this->route)){
+			$this->model->message(true, self::MESSAGE__DELETE_GOOD, ['redirect'=>'/admin']);
+		}$this->model->message(false, self::MESSAGE__DELETE_BAD);
 	}
 
+	public function addPagesAction(){
+		$this->settings();
+		$ID = $this->model->addPages($this->post, $this->files);
+		if($ID){
+			$this->model->message(true, self::MESSAGE__ADD_GOOD, ['ID'=>$ID]);
+		}$this->model->message(false, self::MESSAGE__ADD_BAD);
+	}
 
 	
 

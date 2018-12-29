@@ -34,8 +34,21 @@ class Db {
 						$stmt->bindValue(':'.$paramkey, $paramval);
 					}
 				}
+
+				/*try{
+					$success = $stmt->execute();
+				}catch(Exception $e){
+					#debug($stmt);
+					$success = false;
+				}finally{
+					if(!$success){
+						return false;
+					}
+				}*/
+
 				if(!$stmt->execute()){
 					#debug($stmt);
+					debug($tran);
 					return false;
 				}
 			}

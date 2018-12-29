@@ -65,14 +65,15 @@ class ApiAdmin extends Admin {
 	}
 
 	public function checkURI($post){
-		$ID_PAGE = $post['ID'];
 		$URI = $post['URI'];
+		$ID = isset($post['ID']) ? $post['ID'] : 0;
+		$CHECK_ID = $post['CHECK_ID'];
 
-		$q = 'SELECT count(*) as `COUNT` FROM PAGES WHERE (ID NOT IN (:ID)) AND (URI LIKE :URI)';
-		$params = [
-			'ID' => $ID_PAGE, 
-			'URI' => $URI
-		];
+		$q = 'SELECT count(*) as `COUNT` FROM PAGES WHERE ' . ($CHECK_ID ? '(ID NOT IN (:ID)) AND ' : '') . '(URI LIKE :URI)';
+		$params['URI'] = $URI;
+		if($CHECK_ID){
+			$params['ID'] = $ID;
+		}
 		$count = $this->db->column($q, $params);
 		if($count == 0){
 			return true;

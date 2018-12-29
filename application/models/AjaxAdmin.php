@@ -36,6 +36,9 @@ class AjaxAdmin extends Admin {
 
 	const TEMPLATES_DIR = '/application/views/mainAdmin/templates/';
 
+	const IMAGE_SLICK_BUSES = '';
+	const IMAGE_SLICK_MINIVANS = '';
+
 	public function verConfigs($post){
 		return true;
 	}
@@ -308,223 +311,387 @@ class AjaxAdmin extends Admin {
 
 	/************************************************************* CATALOGS END *************************************************************/
 
-	/************************************************************* PAGE GROUPS *************************************************************/
-	public function verPageGroups($post){
-		if(TRUE){
-			return true;
-		}
-		return false;
-	}
-	public function savePageGroups($post){
-		$common = array_shift($post);
-
-		$ID = $common['ID_PAGE'];
-
-		$HTML_TITLE = $common['HTML_TITLE'];
-		$HTML_DESCR = $common['HTML_DESCR'];
-		$HTML_KEYWORDS = $common['HTML_KEYWORDS'];
-
-		if($ID > 0){
-			$tran = [
-				0 => [
-					'sql' => 'UPDATE PAGE_GROUPS SET 
-						`HTML_TITLE` = "'.$HTML_TITLE.'", 
-						`HTML_DESCR` = "'.$HTML_DESCR.'", 
-						`HTML_KEYWORDS` = "'.$HTML_KEYWORDS.'"
-					WHERE ID = :ID',
-					'params' => [
-						'ID' => $ID
-					]
-				]
-			];
-			foreach($post[0] as $key => $val){
-				$tran = array_merge($tran, [
-					0 => [
-						'sql' => 'UPDATE PAGE_GROUPS_CONTENT SET VAL = :VAL WHERE (ID_GROUP = :ID) AND (VAR LIKE :VAR)',
-						'params' => [
-							'ID' => $ID,
-							'VAR' => $key,
-							'VAL' => $val
-						]
-					]
-				]);
-			}
-			return $this->db->transaction($tran);
-		}
-		
-		return false;
-	}
-	/************************************************************* PAGE GROUPS END *************************************************************/
-
 
 
 	/************************************************************* PAGES *************************************************************/
-	public function verSavePages($post){
-		if(TRUE){
-			return true;
-		}
-		return false;
-		/* 
-			сначала проверяем $post
-			потом подгружаем фотки и делаем $file из массива имён уже загруженных фоток
-			далее ошибок быть не должно -> savePages()
-		 */
-	}
-	public function savePages($post, $files){
-		#debug($post);
-		$common = array_shift($post);
-		#debug($common);
-		$ID = $common['ID_PAGE'];
-		#debug($ID);
-		$ID_GROUP = ($ID == 0) ? strval($common['group']) : 0;
-		$ID_TYPE = $common['ID_TYPE'];
+	
+	public function savePages($route, $post, $files){
+		$ID = $route['param'];
+		$ID_PARENT = isset($post['ID_PARENT']) ? $post['ID_PARENT'] : 0;
 
-		$TITLE = $common['TITLE'];
-		if(isset($files['IMAGE_0'])){
-			$IMAGE = $files['IMAGE_0'];
+		if($ID_PARENT > 0){
+			$ID_LOCATION = $this->db->column('SELECT `ID_LOCATION` + 1 as `ID_LOCATION` FROM PAGES WHERE ID = :ID_PARENT', ['ID_PARENT' => $ID_PARENT]);
+			#debug([1, $ID_LOCATION]);
 		}else{
-			$IMAGE['name'] = '';
-			$IMAGE['size'] = 0;
-		}
-		$IMAGE_NAME_UDP = '';
-		$IMAGE_NAME_INS = '';
-		if(($IMAGE['size'] > 0) && ($IMAGE['name'] != '')){
-			$q = 'SELECT IMAGE FROM PAGES WHERE ID = :ID';
+			$q = 'SELECT ID_LOCATION FROM PAGES WHERE ID = :ID';
 			$params = [
-				'ID' => 1
+				'ID' => $ID,
 			];
-			$oldFile = $this->db->column($q, $params);
-			$pathCatalog = $this->casePathCatalog($ID, $ID_GROUP);
-			if($oldFile == ''){
-				$IMAGE_NAME_UDP = $this->loadImage($pathCatalog, $IMAGE);
-				if($IMAGE_NAME_UDP != ''){
-					$IMAGE_NAME_INS = $IMAGE_NAME_UDP;
-					$IMAGE_NAME_UDP = '`IMAGE` = "'.$IMAGE_NAME_UDP.'", ';
+			$ID_LOCATION = $this->db->column($q, $params);
+			#debug([2, $ID_LOCATION, $q, $params]);
+		}
+
+		if(isset($post['LOC_NUMBER']) && $post['LOC_NUMBER'] != ''){
+			$LOC_NUMBER = $post['LOC_NUMBER'];
+			$OLD_LOC_NUMBER = $this->db->column('SELECT LOC_NUMBER FROM PAGES WHERE ID = :ID', ['ID' => $ID]);
+			if($OLD_LOC_NUMBER != $LOC_NUMBER){
+				$min = $OLD_LOC_NUMBER < $LOC_NUMBER;
+				$this->db->bool('UPDATE PAGES SET LOC_NUMBER = LOC_NUMBER ' . ($min ? '-' : '+') . ' 1
+					WHERE (ID_LOCATION = :ID_LOCATION)
+					AND LOC_NUMBER >' . ($min ? '' : '=') . ' :MIN_LOC_NUMBER
+					AND LOC_NUMBER <' . ($min ? '=' : '') . ' :MAX_LOC_NUMBER',
+					[
+						'ID_LOCATION' => $ID_LOCATION,
+						'MIN_LOC_NUMBER' => $min ? $OLD_LOC_NUMBER : $LOC_NUMBER,
+						'MAX_LOC_NUMBER' => $min ? $LOC_NUMBER : $OLD_LOC_NUMBER,
+					]);
+			}
+		}else{
+			$LOC_NUMBER = $this->db->column('SELECT MAX(LOC_NUMBER) + 1 as `NUMBER` FROM PAGES WHERE ID_LOCATION = :ID_LOCATION', ['ID_LOCATION' => $ID_LOCATION]);
+		}
+
+		$dir = '';
+		switch($ID_PARENT){
+			case 3:
+				$dir = self::IMAGE_CATALOG_SERVICES;
+				break;
+			case 5:
+				$dir = self::IMAGE_SLICK_BUSES;
+				break;
+			case 7:
+				$dir = self::IMAGE_SLICK_MINIVANS;
+				break;
+			case 9:
+				$dir = '';
+				break;
+		}
+
+		$old_file = $this->db->column('SELECT IMAGE FROM PAGES WHERE ID = :ID', ['ID' => $ID]);
+
+		$tran[] = [
+			'sql' => 'UPDATE PAGES SET ID_LOCATION = :ID_LOCATION, ID_PARENT = :ID_PARENT, URI = :URI, LOC_NUMBER = :LOC_NUMBER, CHOICE_TITLE = :CHOICE_TITLE, HTML_TITLE = :HTML_TITLE, IMAGE = :IMAGE, IMAGE_SIGN = :IMAGE_SIGN, HTML_DESCR = :HTML_DESCR, HTML_KEYWORDS = :HTML_KEYWORDS WHERE ID = :ID',
+			'params' => [
+				'ID'					=> $ID,
+				'HTML_TITLE'			=> isset($post['HTML_TITLE']) ? $post['HTML_TITLE'] : '',
+				'HTML_DESCR'			=> isset($post['HTML_DESCR']) ? $post['HTML_DESCR'] : '',
+				'HTML_KEYWORDS'			=> isset($post['HTML_KEYWORDS']) ? $post['HTML_KEYWORDS'] : '',
+				'URI'					=> isset($post['URI']) ? $post['URI'] : '',
+				'ID_PARENT'				=> $ID_PARENT,
+				'ID_LOCATION'			=> $ID_LOCATION,
+				'LOC_NUMBER'			=> $LOC_NUMBER,
+				'CHOICE_TITLE'			=> isset($post['CHOICE_TITLE']) ? $post['CHOICE_TITLE'] : '',
+				'IMAGE'					=> isset($post['IMAGE']) && $dir != '' ? $this->replaceImage($dir, $old_file, $files['IMAGE']) : '',
+				'IMAGE_SIGN'			=> isset($post['IMAGE_SIGN']) ? $post['IMAGE_SIGN'] : '',
+			],
+		];
+
+		$old_converted_data = [];
+		$old_data = $this->db->row('SELECT PC.VAL, LVF.VAR FROM PAGE_CONTENT as PC INNER JOIN LIB_VIEW_FIELDS as LVF ON LVF.ID = PC.ID_FIELD WHERE PC.ID_PAGE = :ID_PAGE', ['ID_PAGE' => $ID]);
+		foreach($old_data as $key => $val){
+			$old_converted_data[$val['VAR']] = $val['VAL'];
+		}
+		$old_data = $old_converted_data;
+		unset($old_converted_data);
+
+		$id_view = $this->db->column('SELECT ID_VIEW FROM PAGES WHERE ID = :ID', ['ID' => $ID]);
+		$fields = $this->db->row('SELECT FIELDS.ID, FIELDS.VAR, TYPES.NAME as TYPE FROM LIB_VIEW_FIELDS as FIELDS LEFT JOIN LIB_FIELD_TYPES as TYPES ON TYPES.ID = FIELDS.CMS_TYPE WHERE FIELDS.ID_VIEW = :ID_VIEW', ['ID_VIEW' => $id_view]);
+
+		#debug($fields);
+		foreach($fields as $field){
+			if($field['TYPE'] == 'TABLE'){
+				if(isset($post['TABLE'])){
+					$isset_table = isset($old_data['TABLE_ID']) && $old_data['TABLE_ID'] > 0;
+
+					if($isset_table){
+						$tran[] = [
+							'sql' => 'DELETE FROM DATA_TABLE WHERE ID_TABLE = :ID_TABLE',
+							'params' => [
+								'ID_TABLE' => $old_data['TABLE_ID'],
+							],
+						];
+						$max_id = $old_data['TABLE_ID'];
+					}else{
+						$max_id = $this->db->column('SELECT MAX(ID_TABLE) + 1 FROM DATA_TABLE');
+						if($max_id == '') $max_id = 1;
+
+						$tran[] = [
+							'sql' => 'INSERT INTO PAGE_CONTENT (ID_PAGE, ID_FIELD, VAL) VALUES (:ID_PAGE, :ID_FIELD, :VAL)',
+							'params' => [
+								'ID_PAGE' => $ID,
+								'ID_FIELD' => $field['ID'],
+								'VAL' => $max_id,
+							],
+						];
+					}
+
+					$cells = $this->DataTableToSimpleArray(json_decode($post['TABLE']['DATA']));
+					foreach($cells as $cell){
+						$tran[] = [
+							'sql' => 'INSERT INTO DATA_TABLE (ID_TABLE, ROW, COL, VAL) VALUES (:ID_TABLE, :ROW, :COL, :VAL)',
+							'params' => [
+								'ID_TABLE' => $max_id,
+								'ROW' => $cell['ROW'],
+								'COL' => $cell['COL'],
+								'VAL' => $cell['VAL'],
+							],
+						];
+					}				
+				}
+			}elseif($field['TYPE'] == 'MULTITABLE'){
+				if(isset($post['MULTITABLE'])){
+					$multitable = $post['MULTITABLE'];
+
+					$isset_table = isset($old_data['MULTITABLE_ID']) && $old_data['MULTITABLE_ID'] > 0;
+
+					if($isset_table){
+						$tran[] = [
+							'sql' => 'DELETE FROM DATA_MULTITABLE_CONTENT WHERE ID_DATA_MULTITABLE IN (SELECT ID FROM DATA_MULTITABLE WHERE ID_MULTITABLE = :ID_MULTITABLE)',
+							'params' => [
+								'ID_MULTITABLE' => $old_data['MULTITABLE_ID'],
+							],
+						];
+						$tran[] = [
+							'sql' => 'DELETE FROM DATA_MULTITABLE WHERE ID_MULTITABLE = :ID_MULTITABLE',
+							'params' => [
+								'ID_MULTITABLE' => $old_data['MULTITABLE_ID'],
+							],
+						];
+						$max_id = $old_data['MULTITABLE_ID'];
+					}else{
+						$max_id = $this->db->column('SELECT MAX(ID_MULTITABLE) + 1 FROM DATA_MULTITABLE');
+						if($max_id == '') $max_id = 1;
+
+						$tran[] = [
+							'sql' => 'INSERT INTO PAGE_CONTENT (ID_PAGE, ID_FIELD, VAL) VALUES (:ID_PAGE, :ID_FIELD, :VAL)',
+							'params' => [
+								'ID_PAGE' => $ID,
+								'ID_FIELD' => $field['ID'],
+								'VAL' => $max_id,
+							],
+						];
+					}
+
+					foreach($multitable['TABLES'] as $table_key => $table_val){
+						$tran[] = [
+							'sql' => 'INSERT INTO DATA_MULTITABLE (`ID_MULTITABLE`, `SUBTITLE`, `SERIAL_NUMBER`) VALUES (:ID_MULTITABLE, :SUBTITLE, :SERIAL_NUMBER)',
+							'params' => [
+								'ID_MULTITABLE' => $max_id,
+								'SUBTITLE' => $post['TITLE_TABLE' . $table_key] ?? '',
+								'SERIAL_NUMBER' => $table_key,
+							],
+						];
+
+						$cells = $this->DataTableToSimpleArray(json_decode($table_val['DATA']));
+						foreach($cells as $cell){
+							$tran[] = [
+								'sql' => 'INSERT INTO DATA_MULTITABLE_CONTENT (`ID_DATA_MULTITABLE`, `ROW`, `COL`, `VAL`) VALUES ((SELECT MAX(ID) FROM DATA_MULTITABLE), :ROW, :COL, :VAL)',
+								'params' => [
+									'ROW' => $cell['ROW'],
+									'COL' => $cell['COL'],
+									'VAL' => $cell['VAL'],
+								],
+							];
+						}
+					}
+				}
+				#debug($tran);
+
+			}elseif($field['TYPE'] == 'IMAGES'){
+				$images = [];
+
+				foreach($post as $key => $val){
+					if(preg_match('#^IMAGES_IMAGE_LINK[0-9]{1,}$#', $key)){
+						$index = explode('IMAGES_IMAGE_LINK', $key)[1];
+						$images[$index]['LINK'] = $val;
+					}elseif(preg_match('#^IMAGES_IMAGE_SIGN[0-9]{1,}$#', $key)){
+						$index = explode('IMAGES_IMAGE_SIGN', $key)[1];
+						$images[$index]['SIGN'] = $val;
+					}elseif(preg_match('#^IMAGES_IMAGE_SUBTITLE[0-9]{1,}$#', $key)){
+						$index = explode('IMAGES_IMAGE_SUBTITLE', $key)[1];
+						$images[$index]['SUBTITLE'] = $val;
+					}
+				}
+
+				foreach($images as $key => $image){
+					$index = 'IMAGES_IMAGE_LINK'.$key;
+
+					if(isset($files[$index])){
+						$filename = $this->loadImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $files[$index]);
+					}else{
+						$filename = '';
+					}
+
+					$images[$key]['LINK'] = $filename ?? '';
+				}
+
+				$old_images = [];
+				$isset_images = isset($old_data['IMAGES_ID']) && $old_data['IMAGES_ID'] > 0;
+
+				if($isset_images){
+					$old_images = $this->db->row('SELECT IMAGES_IMAGE_LINK FROM DATA_IMAGES WHERE  ID_IMAGES = :ID_IMAGES', ['ID_IMAGES' => $old_data['IMAGES_ID']]);
+					foreach($old_images as $key => $old_image){
+						$this->deleteImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $old_image['IMAGES_IMAGE_LINK']); 
+					}
+
+					$tran[] = [
+						'sql' => 'DELETE FROM DATA_IMAGES WHERE ID_IMAGES = :ID_IMAGES',
+						'params' => [
+							'ID_IMAGES' => $old_data['IMAGES_ID'],
+						],
+					];
+					$max_id = $old_data['IMAGES_ID'];
+				}else{
+					$max_id = $this->db->column('SELECT MAX(ID_IMAGES) + 1 FROM DATA_IMAGES');
+					if($max_id == '') $max_id = 1;
+
+					$tran[] = [
+						'sql' => 'INSERT INTO PAGE_CONTENT (ID_PAGE, ID_FIELD, VAL) VALUES (:ID_PAGE, :ID_FIELD, :VAL)',
+						'params' => [
+							'ID_PAGE' => $ID,
+							'ID_FIELD' => $field['ID'],
+							'VAL' => $max_id,
+						],
+					];
+				}
+
+				foreach($images as $key => $image){
+					$tran[] = [
+						'sql' => 'INSERT INTO DATA_IMAGES (ID_IMAGES, IMAGES_IMAGE_LINK, IMAGES_IMAGE_SUBTITLE, IMAGES_IMAGE_SIGN, SERIAL_NUMBER) VALUES (:ID_IMAGES, :IMAGES_IMAGE_LINK, :IMAGES_IMAGE_SUBTITLE, :IMAGES_IMAGE_SIGN, :SERIAL_NUMBER)',
+						'params' => [
+							'ID_IMAGES' => $max_id,
+							'IMAGES_IMAGE_LINK' => $image['LINK'],
+							'IMAGES_IMAGE_SUBTITLE' => $image['SUBTITLE'],
+							'IMAGES_IMAGE_SIGN' => $image['SIGN'],
+							'SERIAL_NUMBER' => $key
+						],
+					];
 				}
 			}else{
-				$this->replaceImage($pathCatalog, $oldFile, $IMAGE);
-			}			
-		}
-		$CHOICE_TITLE = $common['CHOICE_TITLE'];
-		$IMAGE_SIGN = $common['IMAGE_SIGN'];
-		$URI = $common['URI'];
-		$LOC_NUMBER = $common['LOC_NUMBER'];
-		$HTML_DESCR = $common['HTML_DESCR'];
-		$HTML_KEYWORDS = $common['HTML_KEYWORDS'];
-
-		if($ID != 0){ //update and clear
-			$tran = [
-				0 => [
-					'sql' => 'UPDATE PAGES SET `URI` = :URI, `LOC_NUMBER` = :LOC_NUMBER, `TITLE` = :TITLE, '.$IMAGE_NAME_UDP.'`CHOICE_TITLE` = :CHOICE_TITLE, `IMAGE_SIGN` = :IMAGE_SIGN, `HTML_DESCR` = :HTML_DESCR, `HTML_KEYWORDS` = :HTML_KEYWORDS WHERE ID = :ID;',
-					'params' => [
-						'ID' => $ID,
-						'CHOICE_TITLE' => $CHOICE_TITLE,
-						'IMAGE_SIGN' => $IMAGE_SIGN,
-						'URI' => $URI,
-						'LOC_NUMBER' => $LOC_NUMBER,
-						'TITLE' => $TITLE,
-						'HTML_DESCR' => $HTML_DESCR,
-						'HTML_KEYWORDS' => $HTML_KEYWORDS
-					]
-				]
-			];
-
-			if($ID_TYPE == 1){ //full
-				$q = 'SELECT ID FROM PAGE_FULL WHERE ID_PAGE = :ID_PAGE';
-				$params = [
-					'ID_PAGE' => $ID
-				];
-				$ID_FULL_PAGE = $this->db->column($q, $params);
-				$tran_delete[0] = [
-					'sql' => 'DELETE FROM PAGE_FULL_CONTENT WHERE ID_FULL_PAGE = :ID_FULL_PAGE',
-					'params' => [
-						'ID_FULL_PAGE' => $ID_FULL_PAGE
-					]
-				];
-				$tran = array_merge($tran, $tran_delete);
-				$tran_delete[0] = [
-					'sql' => 'DELETE FROM PAGE_FULL WHERE ID_PAGE = :ID_PAGE',
-					'params' => [
-						'ID_PAGE' => $ID
-					]
-				];
-				$tran = array_merge($tran, $tran_delete);
-			}elseif($ID_TYPE == 2){ //tmpls
-				$tran_delete[0] = [
-					'sql' => 'DELETE FROM PAGE_TEMPLATES WHERE ID_PAGE = :ID_PAGE',
-					'params' => [
-						'ID_PAGE' => $ID
-					]
-				];
-				$tran = array_merge($tran, $tran_delete);
-				
-				$TMPL_LIST = [];
-
-				$q = 'SELECT ID, ID_TEMPLATE FROM PAGE_TEMPLATES WHERE ID_PAGE = :ID_PAGE';
-				$params = [
-					'ID_PAGE' => $ID
-				];
-				$TMPL_ARRAY = $this->db->row($q, $params);
-
-				foreach($TMPL_ARRAY as $key => $val){
-					$ID_PAGE_TEMPLATE = $val['ID'];
-					$ID_LIB_TEMPLATE = $val['ID_TEMPLATE'];
-
-					$q = 'SELECT `PATH` FROM LIB_TEMPLATES WHERE ID = :ID';
+				if(isset($post[$field['VAR']]) || isset($files[$field['VAR']])){
+					#debug($field);
+					if(isset($old_data[$field['VAR']])){
+						$q = 'UPDATE PAGE_CONTENT SET VAL = :VAL WHERE (ID_PAGE = :ID_PAGE) AND (ID_FIELD = :ID_FIELD)';
+					}else{
+						$q = 'INSERT INTO PAGE_CONTENT (ID_PAGE, ID_FIELD, VAL) VALUES (:ID_PAGE, :ID_FIELD, :VAL)';
+					}
 					$params = [
-						'ID' => $ID_LIB_TEMPLATE
+						'ID_PAGE' => $ID,
+						'ID_FIELD' => $field['ID'],
 					];
-					$NAME_TEMPLATE = $this->db->column($q, $params);
 
-					$list_tran = $this->switchDELTemplate($NAME_TEMPLATE, $ID_PAGE_TEMPLATE);
-					//debug([$NAME_TEMPLATE, $list_tran]);
-					$tran = array_merge($tran, $list_tran);
+					if($field['TYPE'] == 'FILE'){
+
+						#debug([$field, $files[$field['VAR']]]);
+
+						$dir = '';
+						switch($field['VAR']){
+							case 'HEADER_LEFT_IMAGE':
+							case 'HEADER_MIDDLE_IMAGE':
+							case 'HEADER_RIGHT_IMAGE':
+								$dir = self::IMAGE_TEMPLATE_HEADER_PAGE;
+								break;
+							default:
+								debug($field);
+						}
+
+						if(isset($old_data[$field['VAR']])){
+							$params['VAL'] = $this->replaceImage($dir, $old_data[$field['VAR']], $files[$field['VAR']]);
+						}else{
+							$params['VAL'] = $this->loadImage($dir, $files[$field['VAR']]);
+						}
+					}else{
+						$params['VAL'] = $post[$field['VAR']];
+					}
+					$tran[] = [
+						'sql' => $q,
+						'params' => $params,
+					];
 				}
 			}
-		}else{ //insert
-			$tran = [];
+		}
 
-			$q = 'INSERT INTO PAGES (`ID_LOCATION`, `ID_GROUP`, `ID_TYPE`, `CHOICE_TITLE`, `URI`, `LOC_NUMBER`, `TITLE`, `IMAGE`, `IMAGE_SIGN`, `HTML_DESCR`, `HTML_KEYWORDS`) VALUES ((SELECT (ID_LOCATION + 1) FROM PAGE_GROUPS WHERE ID = :ID_GROUP), :ID_GROUP, :ID_TYPE, :CHOICE_TITLE, :URI, (SELECT MAX(P.LOC_NUMBER) + 1 FROM PAGES as P WHERE P.ID_GROUP = :ID_GROUP), :TITLE, :IMAGE, :IMAGE_SIGN, :HTML_DESCR, :HTML_KEYWORDS);';
-			$params = [
-				'ID_GROUP' => $ID_GROUP,
-				'ID_TYPE' => $ID_TYPE,
-				'CHOICE_TITLE' => $CHOICE_TITLE,
-				'URI' => $URI,
-				'TITLE' => $TITLE,
-				'IMAGE' => $IMAGE_NAME_INS,
-				'IMAGE_SIGN' => $IMAGE_SIGN,
-				'HTML_DESCR' => $HTML_DESCR,
-				'HTML_KEYWORDS' => $HTML_KEYWORDS
-			];
-			$ID = $this->db->return($q, $params);
-		}
-		//debug($tran);
-		foreach($post as $key => $val){
-			$tran = array_merge($tran, $this->switchUPDTemplate($val, $files, (string)($key+1), $ID));
-		}
-		//debug($this->db->transaction($tran));
-		if($this->db->transaction($tran)){
-			return $ID;
-		}else{
-			return false;
-		}
+		#debug($tran);
+
+		return $this->db->transaction($tran);
 	}
 
-	public function verPages_del($route){
-		if(TRUE){
-			return true;
-		}
-		return false;
-	}
-	
 	public function delPages($route){
 		$ID = $route['param'];
-		$q = 'DELETE FROM PAGES WHERE ID = :ID';
+		$tran = [];
 		$params = [
-			'ID' => $ID
+			'ID' => $ID,
 		];
-		return $this->db->bool($q, $params);
+
+		$q = 'SELECT ID, ID_FIELD, VAL FROM PAGE_CONTENT WHERE ID_PAGE = :ID';
+		foreach($this->db->row($q, $params) as $row){
+			$field_type = $this->db->column('SELECT NAME FROM LIB_FIELD_TYPES WHERE ID = (SELECT CMS_TYPE FROM LIB_VIEW_FIELDS WHERE ID = :ID)', ['ID' => $row['ID_FIELD']]);
+
+			$tran[] = [
+				'sql' => 'DELETE FROM PAGE_CONTENT WHERE ID = :ID',
+				'params' => [
+					'ID' => $row['ID'],
+				],
+			];
+
+			if($field_type == 'FILE'){
+				//delete file!
+			}
+		}
+
+		$tran[] = [
+			'sql' => 'DELETE FROM PAGES WHERE ID = :ID',
+			'params' => $params,
+		];
+
+		return $this->db->transaction($tran);
 	}
+	
+	public function addPages($post, $files){
+		$ID_LOCATION = $this->db->column('SELECT `ID_LOCATION` + 1 as `ID_LOCATION` FROM PAGES WHERE ID = :ID_PARENT', ['ID_PARENT' => $post['ID_PARENT']]);
+		if(isset($post['LOC_NUMBER']) && $post['LOC_NUMBER'] != ''){
+			$LOC_NUMBER = $post['LOC_NUMBER'];
+			$this->db->bool('UPDATE PAGES SET LOC_NUMBER = LOC_NUMBER + 1 WHERE ID_LOCATION = :ID_LOCATION', ['ID_LOCATION' => $ID_LOCATION]);
+		}else{
+			$LOC_NUMBER = $this->db->column('SELECT MAX(LOC_NUMBER) + 1 as `NUMBER` FROM PAGES WHERE ID_LOCATION = :ID_LOCATION', ['ID_LOCATION' => $ID_LOCATION]);
+		}
+
+		$dir = '';
+		switch($post['ID_PARENT']){
+			case 3:
+				$dir = self::IMAGE_CATALOG_SERVICES;
+				break;
+			case 5:
+				$dir = self::IMAGE_SLICK_BUSES;
+				break;
+			case 7:
+				$dir = self::IMAGE_SLICK_MINIVANS;
+				break;
+			case 9:
+				$dir = '';
+				break;
+		}
+
+		$q = 'INSERT INTO PAGES (ID_LOCATION, ID_VIEW, ID_PARENT, CAN_BE_SUPPLEMENTED, MAY_HAVE_THE_PARENT, URI, LOC_NUMBER, CHOICE_TITLE, HTML_TITLE, DESCR, IMAGE, IMAGE_SIGN, HTML_DESCR, HTML_KEYWORDS) VALUES (:ID_LOCATION, :ID_VIEW, :ID_PARENT, :CAN_BE_SUPPLEMENTED, :MAY_HAVE_THE_PARENT, :URI, :LOC_NUMBER, :CHOICE_TITLE, :HTML_TITLE, :DESCR, :IMAGE, :IMAGE_SIGN, :HTML_DESCR, :HTML_KEYWORDS)';
+		$params = [
+			'HTML_TITLE'			=> isset($post['HTML_TITLE']) ? $post['HTML_TITLE'] : '',
+			'HTML_DESCR'			=> isset($post['HTML_DESCR']) ? $post['HTML_DESCR'] : '',
+			'HTML_KEYWORDS'			=> isset($post['HTML_KEYWORDS']) ? $post['HTML_KEYWORDS'] : '',
+			'ID_VIEW'				=> isset($post['ID_VIEW']) ? $post['ID_VIEW'] : '',
+			'URI'					=> isset($post['URI']) ? $post['URI'] : '',
+			'ID_PARENT'				=> isset($post['ID_PARENT']) ? $post['ID_PARENT'] : '',
+			'DESCR'					=> isset($post['DESCR']) ? $post['DESCR'] : '',
+			'ID_LOCATION'			=> $ID_LOCATION,
+			'CAN_BE_SUPPLEMENTED'	=> 0,
+			'MAY_HAVE_THE_PARENT'	=> 1,
+			'LOC_NUMBER'			=> $LOC_NUMBER,
+			'CHOICE_TITLE'			=> isset($post['CHOICE_TITLE']) ? $post['CHOICE_TITLE'] : '',
+			'IMAGE'					=> isset($post['IMAGE']) && $dir != '' ? $this->loadImage($dir, $files['IMAGE']) : '',
+			'IMAGE_SIGN'			=> isset($post['IMAGE_SIGN']) ? $post['IMAGE_SIGN'] : '',
+		];
+
+		return $this->db->return($q, $params);
+	}
+	
 	/************************************************************* PAGES END *************************************************************/
 
 
@@ -535,108 +702,22 @@ class AjaxAdmin extends Admin {
 
 
 
-	private function switchDELTemplate($TMPL_TYPE, $ID_PAGE_TEMPLATE){
-		$params = [
-			'ID_PAGE_TEMPLATE' => $ID_PAGE_TEMPLATE
-		];
-		switch($TMPL_TYPE){
-			case 'H1':
-				$return = [
-					0 => [
-						'sql' => 'DELETE FROM BLOCK_HEADER_ORDER WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					]
-				];
-				break;
-			case 'H2':
-				$return = [
-					0 => [
-						'sql' => 'DELETE FROM BLOCK_HEADER_IMAGES WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					]
-				];
-				break;
-			case 'B1':
-				$return = [
-					1 => [
-						'sql' => 'DELETE FROM BLOCK_TABLE WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					],
-					0 => [
-						'sql' => 'DELETE FROM DATA_TABLE WHERE ID_TABLE IN (SELECT ID FROM BLOCK_TABLE WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE)',
-						'params' => $params
-					]
-				];
-				break;
-			case 'B2':
-				$return = [
-					2 => [
-						'sql' => 'DELETE FROM BLOCK_MULTITABLE WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					],
-					1 => [
-						'sql' => 'DELETE FROM BLOCK_MULTITABLE_CONTENT WHERE ID_MULTITABLE IN (SELECT ID FROM BLOCK_MULTITABLE WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE)',
-						'params' => $params
-					],
-					0 => [
-						'sql' => 'DELETE FROM DATA_MULTITABLE WHERE ID_MULTITABLE_CONTENT IN (SELECT ID FROM BLOCK_MULTITABLE_CONTENT WHERE ID_MULTITABLE IN (SELECT ID FROM BLOCK_MULTITABLE WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE))',
-						'params' => $params
-					]
-				];
-				break;
-			case 'B3':
-				$return = [
-					0 => [
-						'sql' => 'DELETE FROM BLOCK_TEXT WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					]
-				];
-				break;
-			case 'B4':
-				$return = [
-					1 => [
-						'sql' => 'DELETE FROM BLOCK_IMAGES WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					],
-					0 => [
-						'sql' => 'DELETE FROM BLOCK_IMAGE_CONTENT WHERE ID_IMAGE IN (SELECT ID FROM BLOCK_IMAGES WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE)',
-						'params' => $params
-					]
-				];
-				break;
-			case 'B5':
-				$return = [
-					0 => [
-						'sql' => 'DELETE FROM BLOCK_LINKS WHERE ID_PAGE_TEMPLATE = :ID_PAGE_TEMPLATE',
-						'params' => $params
-					]
-				];
-				break;
-			case 'EXC1':
-				return [];
-				break;
+
+
+
+	private function DataTableToSimpleArray($arr){
+		$data = [];
+		foreach($arr as $key => $value){
+			list($cell_index, $cell_row, $cell_col) = explode('_', explode('CELL_TABLE', $key)[1]);
+			$data[] = [
+				'VAL' => $value,
+				'ROW' => $cell_row,
+				'COL' => $cell_col,
+			];
 		}
-		return $return;
+		return $data;
 	}
 
-
-
-
-	private function getTMPLid($NAME){
-		$q = 'SELECT ID FROM LIB_TEMPLATES WHERE `PATH` LIKE :PATH;';
-		$params = [
-			'PATH' => $NAME
-		];
-		return $this->db->column($q, $params);
-	}
-
-	private function getTMPLtype($ID){
-		$q = 'SELECT ID_TYPE FROM PAGES WHERE ID = :ID;';
-		$params = [
-			'ID' => $ID
-		];
-		return $this->db->column($q, $params);
-	}
 
 	private function switchUPDTemplate($val, $files, $SN, $ID_PAGE){
 		$NAME_TMPL = $val['TYPE'];
@@ -938,13 +1019,26 @@ class AjaxAdmin extends Admin {
 		return $return;
 	}
 
+
+
+
+
+
+
+
+
+
+
+
+
+
 	private function casePathCatalog($ID, $ID_GROUP = 0){
 		if($ID_GROUP == 0){
 			$q = 'SELECT ID_GROUP FROM PAGES WHERE ID = :ID';
 			$params = [
 				'ID' => $ID
 			];
-			$ID_GROUP = $this->db->row($q, $params)[0]['ID_GROUP'];
+			$ID_GROUP = $this->db->column($q, $params);
 		}	
 		switch($ID_GROUP){
 			case 2:
@@ -958,6 +1052,8 @@ class AjaxAdmin extends Admin {
 		}
 		return '';
 	}
+
+
 
 	private function loadImage($dir, $file){
 		if($file['size'] > 0){

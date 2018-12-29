@@ -6,11 +6,16 @@ use application\models\Admin;
 
 class MainAdmin extends Admin {
 
-	private $reportMaxCountSessions = 20;
+	private $reportMaxCountSessions = 10;
 
 	private $kekus_username = 'kekus';
 	private $kekus_name = 'kekus';
 	private $kekus_pass = '$2y$10$2zEARs61ZP8haAeqoumKX.cqDWzHXy8dvt1nszgljVn8tWXALOuZq';
+
+
+	const FIELD_TABLE = 'TABLE';
+	const FIELD_MULTITABLE = 'MULTITABLE';
+	const FIELD_IMAGES = 'IMAGES';
 
 
 	//LOGIN
@@ -89,170 +94,235 @@ class MainAdmin extends Admin {
 
 
 	public function sitePagesContent($route){
-		if(isset($route['param']) && ($route['param'] > 0)){
-			$params = [
-				'ID' => $route['param']
-			];
+		$page_isset = isset($route['param']) && ($route['param'] > 0);
 
-			$q = 'SELECT V.ID as VIEW, P.ID_PARENT, P.CAN_BE_SUPPLEMENTED, P.MAY_HAVE_THE_PARENT, P.URI, P.LOC_NUMBER, P.CHOICE_TITLE, P.HTML_TITLE, P.IMAGE, P.IMAGE_SIGN, P.HTML_DESCR, P.HTML_KEYWORDS FROM PAGES as P INNER JOIN LIB_VIEWS as V ON P.ID_VIEW = V.ID WHERE P.ID = :ID';
-			$result = $this->db->row($q, $params);
-			$result = count($result) == 1 ? $result[0] : [];
+		$params = [
+			'ID' => $page_isset ? $route['param'] : 0,
+		];
 
-			$return['ID'] = $route['param'];
-			$return['FIELDS']['COMMON'] = [
-				$this->get_page_content_struct([
-					'VAR'=>'HTML_TITLE',
-					'VAL'=>$result['HTML_TITLE'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'Заголовок страницы',
-				]),
-				$this->get_page_content_struct([
-					'VAR'=>'HTML_DESCR',
-					'VAL'=>$result['HTML_DESCR'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'Мета описание',
-				]),
-				$this->get_page_content_struct([
-					'VAR'=>'HTML_KEYWORDS',
-					'VAL'=>$result['HTML_KEYWORDS'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'Мета ключевые слова',
-				]),
+		$q = 'SELECT P.ID_VIEW, P.ID_PARENT, P.CAN_BE_SUPPLEMENTED, P.MAY_HAVE_THE_PARENT, P.URI, P.LOC_NUMBER, P.CHOICE_TITLE, P.HTML_TITLE, P.IMAGE, P.IMAGE_SIGN, P.HTML_DESCR, P.HTML_KEYWORDS FROM PAGES as P WHERE P.ID = :ID';
+		$result = $this->db->row($q, $params);
+		$result = count($result) == 1 ? $result[0] : [];
 
-				$this->get_page_content_struct([
-					'VAR'=>'VIEW',
-					'VAL'=>$result['VIEW'],
-					'CMS_TYPE'=> 'CMB',
-					'CMS_TYPE__PARENT_BOX' => 'VIEWS',
-					'CMS_TITLE'=> 'Шаблон',
-					'DISABLED' => $result['MAY_HAVE_THE_PARENT'] ? False : True,
-				]),
+		$MAY_HAVE_THE_PARENT = isset($result['MAY_HAVE_THE_PARENT']) && $result['MAY_HAVE_THE_PARENT'];
 
-				$this->get_page_content_struct([
-					'VAR'=>'URI',
-					'VAL'=>$result['URI'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'URI',
-					'DISABLED' => $result['MAY_HAVE_THE_PARENT'] ? False : True,
-					'EVENTS' => [
-						'onchange' => "checkURI(this)"
-					],
-				]),
-				$this->get_page_content_struct([
-					'VAR'=>'ID_PARENT',
-					'VAL'=>$result['ID_PARENT'],
-					'CMS_TYPE'=> 'CMB',
-					'CMS_TYPE__PARENT_BOX' => 'PARENTS',
-					'CMS_TITLE'=> 'Раздел',
-					'DISABLED' => $result['MAY_HAVE_THE_PARENT'] ? False : True,
-				]),
-				/*
-				$this->get_page_content_struct([
-					'VAR'=>'CAN_BE_SUPPLEMENTED',
-					'VAL'=>$result['CAN_BE_SUPPLEMENTED'],
-					'CMS_TYPE'=> 'CB',
-					'CMS_TITLE'=> 'Может быть родителем',
-				]),
-				*/
-				$this->get_page_content_struct([
-					'VAR'=>'LOC_NUMBER',
-					'VAL'=>$result['LOC_NUMBER'],
-					'CMS_TYPE'=> 'NUMBER_BTN',
-					'CMS_TITLE'=> 'Порядковый номер в списке',
-				]),
+		$return['FIELDS']['COMMON'] = [
+			$this->get_page_content_struct([
+				'VAR' => 'HTML_TITLE',
+				'VAL' => isset($result['HTML_TITLE']) ? $result['HTML_TITLE'] : '',
+				'CMS_TYPE' => 'TEXT',
+				'CMS_TITLE' => 'Заголовок страницы',
+			]),
+			$this->get_page_content_struct([
+				'VAR' => 'HTML_DESCR',
+				'VAL' => isset($result['HTML_DESCR']) ? $result['HTML_DESCR'] : '',
+				'CMS_TYPE' => 'TEXT',
+				'CMS_TITLE' => 'Мета описание',
+			]),
+			$this->get_page_content_struct([
+				'VAR' => 'HTML_KEYWORDS',
+				'VAL' => isset($result['HTML_KEYWORDS']) ? $result['HTML_KEYWORDS'] : '',
+				'CMS_TYPE' => 'TEXT',
+				'CMS_TITLE' => 'Мета ключевые слова',
+			]),
 
-				$this->get_page_content_struct([
-					'VAR'=>'CHOICE_TITLE',
-					'VAL'=>$result['CHOICE_TITLE'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'Заголовок для каталога',
-				]),
-				$this->get_page_content_struct([
-					'VAR'=>'IMAGE',
-					'VAL'=>$result['IMAGE'],
-					'CMS_TYPE'=> 'FILE',
-					'CMS_TITLE'=> 'Картинка для каталога',
-				]),
-				$this->get_page_content_struct([
-					'VAR'=>'IMAGE_SIGN',
-					'VAL'=>$result['IMAGE_SIGN'],
-					'CMS_TYPE'=> 'TEXT',
-					'CMS_TITLE'=> 'Подпись для картинки каталога',
-				]),
-			];
-			$return['TITLE'] = 'Редактирование страницы: ' . $result['HTML_TITLE'];
-			unset($result);
+			$this->get_page_content_struct([
+				'VAR'=>'ID_VIEW',
+				'VAL'=>isset($result['ID_VIEW']) ? $result['ID_VIEW'] : '',
+				'CMS_TYPE'=> 'CMB',
+				'CMS_TYPE__PARENT_BOX' => 'VIEWS',
+				'CMS_TITLE'=> 'Шаблон',
+				'DISABLED' => $page_isset ? true : false,
+			]),
 
-			#var_dump($return);
+			$this->get_page_content_struct([
+				'VAR'=>'URI',
+				'VAL'=>isset($result['URI']) ? $result['URI'] : '',
+				'CMS_TYPE'=> 'TEXT',
+				'CMS_TITLE'=> 'URI',
+				'DISABLED' => !$page_isset ? false : ($MAY_HAVE_THE_PARENT ? false : true),
+				'EVENTS' => [
+					'onchange' => 'checkURI(this, ' . ($page_isset ? 'true' : 'false') . ')',
+				],
+			]),
+			$this->get_page_content_struct([
+				'VAR'=>'ID_PARENT',
+				'VAL'=>isset($result['ID_PARENT']) ? $result['ID_PARENT'] : '',
+				'CMS_TYPE'=> 'CMB',
+				'CMS_TYPE__PARENT_BOX' => 'PARENTS',
+				'CMS_TITLE'=> 'Раздел',
+				'DISABLED' => !$page_isset ? false : ($MAY_HAVE_THE_PARENT ? false : true),
+			]),
+			/*
+			$this->get_page_content_struct([
+				'VAR'=>'CAN_BE_SUPPLEMENTED',
+				'VAL'=>$result['CAN_BE_SUPPLEMENTED'],
+				'CMS_TYPE'=> 'CB',
+				'CMS_TITLE'=> 'Может быть родителем',
+			]),
+			*/
+			$this->get_page_content_struct([
+				'VAR'=>'LOC_NUMBER',
+				'VAL'=>isset($result['LOC_NUMBER']) ? $result['LOC_NUMBER'] : '',
+				'CMS_TYPE'=> 'NUMBER_BTN',
+				'CMS_TITLE'=> 'Порядковый номер в списке',
+			]),
 
-			$return['FIELDS']['CONTENT'] = [];
-			$q = 'SELECT PC.VAL, F.VAR, F.CMS_TITLE, F.CMS_DESCR, FT.NAME as NAME_TYPE FROM PAGE_CONTENT as PC INNER JOIN (LIB_VIEW_FIELDS as F INNER JOIN LIB_FIELD_TYPES as FT ON FT.VALUE = F.CMS_TYPE) ON F.ID = PC.ID_FIELD WHERE ID_PAGE = :ID';
-			foreach($this->db->row($q, $params) as $key => $val){
-				$return['FIELDS']['CONTENT'][$key] = $this->get_page_content_struct([
-					'VAR'=>$val['VAR'],
-					'VAL'=>$val['VAL'],
-					'CMS_TYPE'=> $val['NAME_TYPE'],
-					'CMS_TITLE'=> $val['CMS_TITLE'],
-					'CMS_DESCR'=> $val['CMS_DESCR'],
+			$this->get_page_content_struct([
+				'VAR'=>'CHOICE_TITLE',
+				'VAL'=>isset($result['CHOICE_TITLE']) ? $result['CHOICE_TITLE'] : '',
+				'CMS_TYPE'=> 'TEXT',
+				'CMS_TITLE'=> 'Заголовок для каталога',
+			]),
+			$this->get_page_content_struct([
+				'VAR'=>'IMAGE',
+				'VAL'=>isset($result['IMAGE']) ? $result['IMAGE'] : '',
+				'CMS_TYPE'=> 'FILE',
+				'CMS_TITLE'=> 'Картинка для каталога',
+			]),
+			$this->get_page_content_struct([
+				'VAR'=>'IMAGE_SIGN',
+				'VAL'=>isset($result['IMAGE_SIGN']) ? $result['IMAGE_SIGN'] : '',
+				'CMS_TYPE'=> 'TEXT',
+				'CMS_TITLE'=> 'Подпись для картинки каталога',
+			]),
+		];
+		$return['TITLE'] = $page_isset ? 'Редактирование страницы: ' . $result['HTML_TITLE'] : 'Добавление страницы';
+		unset($result);
+		
+		if($page_isset){
+			$id_view = $this->db->column('SELECT ID_VIEW FROM PAGES WHERE ID = :ID', $params);
+			$content = $this->db->row('SELECT * FROM PAGE_CONTENT WHERE ID = :ID', $params);
+			$fields = $this->db->row('SELECT LVF.ID, LVF.GROUP_NUMBER, LVF.VAR, LVF.CMS_TITLE, LVF.CMS_DESCR, LFT.NAME as CMS_TYPE_NAME FROM LIB_VIEW_FIELDS as LVF LEFT JOIN LIB_FIELD_TYPES as LFT ON LFT.VALUE = LVF.CMS_TYPE WHERE LVF.ID_VIEW = :ID ORDER BY LVF.GROUP_NUMBER ASC, LVF.SERIAL_NUMBER ASC', ['ID' => $id_view]);
+			#debug([$fields, $id_view]);
+			foreach($fields as $key => $field){
+				$group_key = $field['GROUP_NUMBER'];
+				$result = $this->db->column(
+					'SELECT VAL FROM PAGE_CONTENT WHERE (ID_PAGE = :ID_PAGE) AND (ID_FIELD = :ID_FIELD)',
+					[
+						'ID_FIELD' => $field['ID'],
+						'ID_PAGE' => $route['param']
+					]
+				);
+				switch($field['CMS_TYPE_NAME']){
+					case self::FIELD_TABLE:
+						$val = $this->getTable($result);
+						break;
+					case self::FIELD_MULTITABLE:
+						$val = $this->getMultiTable($result);
+						break;
+					case self::FIELD_IMAGES:
+						$val = $this->getImages($result);
+						break;
+					default:
+						$val = $result;
+						break;
+				}
+
+				$return['FIELDS']['CONTENT'][$group_key][] = $this->get_page_content_struct([
+					'VAR'=>$field['VAR'],
+					'VAL'=>$val ? $val : '',
+					'CMS_TYPE'=> $field['CMS_TYPE_NAME'],
+					'CMS_TITLE'=> $field['CMS_TITLE'],
+					'CMS_DESCR'=> $field['CMS_DESCR'],
 				]);
 			}
+			#debug($return);
+			#debug($return['FIELDS']['CONTENT']);
 		}else{
-			$return['ID'] = '0';
-			$return['FIELDS'] = [];
+			$return['FIELDS']['CONTENT'] = [];
 		}
 		$return['PARENTS'] = $this->db->row('SELECT ID as `VALUE`, HTML_TITLE as `TEXT` FROM PAGES WHERE (CAN_BE_SUPPLEMENTED=1) ORDER BY ID_PARENT ASC, LOC_NUMBER ASC');
 		$return['VIEWS'] = $this->db->row('SELECT ID as `VALUE`, NAME as `TEXT` FROM LIB_VIEWS');
 		return $return;
 	}
 
-
-
-
-
-
-
-	private function typePage($type, $route){
-		$return = '';
-		$params = [
-			'ID' => $route['param']
-		];
-		if($type == 1){
-			$q = '
-			SELECT "0" as ID, "0" as ID_FULL_PAGE, "ID" as VAR, ID_FULL_PAGE as VAL, "" as CMS_TITLE, "" as CMS_DESCR, "" as CMS_TYPE 
-				FROM PAGE_FULL_CONTENT as PFC 
-				INNER JOIN PAGE_FULL as PF ON PFC.ID_FULL_PAGE = PF.ID
-			UNION ALL 
-			SELECT PFC.* 
-				FROM PAGE_FULL_CONTENT as PFC 
-				INNER JOIN PAGE_FULL as PF ON PFC.ID_FULL_PAGE = PF.ID 
-			WHERE PF.ID_PAGE = :ID';
-			$subresult = $this->db->row($q, $params);
-			foreach($subresult as $key => $val){
-				$result[$val['VAR']] = $val['VAL'];
-			}
-			$q = 'SELECT LT.PATH FROM LIB_TEMPLATES as LT INNER JOIN PAGE_FULL as PF ON LT.ID = PF.ID_TEMPLATE WHERE ID_PAGE = :ID';
-			$path = $this->db->row($q, $params)[0]['PATH'];
-			ob_start();
-			extract($result);
-			require $_SERVER['DOCUMENT_ROOT'].'/application/views/mainAdmin/templates/'.$path.'.php';
-			$return = ob_get_clean();
-		}elseif($type == 2){
-			$q = 'SELECT ID, ID_TEMPLATE FROM PAGE_TEMPLATES WHERE ID_PAGE = :ID ORDER BY SERIAL_NUMBER ASC';
-			$subresult = $this->db->row($q, $params);
-			foreach($subresult as $key => $val){
-				$return .= $this->getBlockContent($val['ID'], $val['ID_TEMPLATE']);
-			}
+	public function sitePagesContent_btn($route){
+		$btns = [];
+		$page_isset = isset($route['param']) && $route['param'] > 0;
+		if($page_isset){
+			$btns[] = [
+				'text' =>  'Удалить',
+				'class' => 'remove',
+				'onclick' => 'return cms.ajaxSend(\'/admin/site/pages/remove/' . $route['param'] . '\', this, false)',
+			];
 		}
-		#debug($return);
-		return $return;
+		$btns[] = [
+			'text' => $page_isset ? 'Сохранить' : 'Добавить',
+			'class' => 'add',
+			'onclick' => $page_isset ? 'return cms.dataSend(\'/admin/site/pages/save/' . $route['param'] . '\')' : 'return cms.dataSend(\'/admin/site/pages/add\')',
+		];
+		return $btns;
 	}
 
 
 
 
 
+	private function getTable($ID, $SUBTITLE = ''){
+		return [
+			'ID' => $ID,
+			'TABLE_TITLE' => $SUBTITLE,
+			'DATA' => $this->SimpleArrayToTableArray($this->db->row('SELECT * FROM DATA_TABLE WHERE ID_TABLE = :ID_TABLE', ['ID_TABLE' => $ID])),
+			'ROWS' => $this->db->column('SELECT MAX(ROW) FROM DATA_TABLE WHERE ID_TABLE = :ID_TABLE', ['ID_TABLE' => $ID]),
+			'COLS' => $this->db->column('SELECT MAX(COL) FROM DATA_TABLE WHERE ID_TABLE = :ID_TABLE', ['ID_TABLE' => $ID]),
+		];
+	}
 
+	private function getMultiTable($ID){
+		$data = [
+			'ID' => $ID,
+			'TABLES' => [],
+		];
 
+		if(!$ID){
+			return $data;
+		}
+
+		
+		$q = 'SELECT ID, SUBTITLE, SERIAL_NUMBER FROM DATA_MULTITABLE WHERE ID_MULTITABLE = :ID_MULTITABLE ORDER BY SERIAL_NUMBER ASC';
+		$params = ['ID_MULTITABLE' => $ID];
+		#debug($this->db->row($q, $param));
+
+		foreach($this->db->row($q, $params) as $value){
+			#debug($value);
+			$ID_MULTITABLE = $value['ID'];
+			$SUBTITLE = $value['SUBTITLE'];
+
+			$TABLE_PARAMS = ['ID_DATA_MULTITABLE' => $ID_MULTITABLE];
+
+			$TABLE_DATA = $this->db->row('SELECT * FROM DATA_MULTITABLE_CONTENT WHERE ID_DATA_MULTITABLE = :ID_DATA_MULTITABLE', $TABLE_PARAMS);
+			$ROWS = $this->db->column('SELECT MAX(ROW) FROM DATA_MULTITABLE_CONTENT WHERE ID_DATA_MULTITABLE = :ID_DATA_MULTITABLE', $TABLE_PARAMS);
+			$COLS = $this->db->column('SELECT MAX(COL) FROM DATA_MULTITABLE_CONTENT WHERE ID_DATA_MULTITABLE = :ID_DATA_MULTITABLE', $TABLE_PARAMS);
+			
+			$data['TABLES'][] = [
+				'ID' => $ID_MULTITABLE,
+				'SUBTITLE' => $SUBTITLE,
+				'DATA' => $this->SimpleArrayToTableArray($TABLE_DATA),
+				'ROWS' => $ROWS,
+				'COLS' => $COLS,
+			];
+		}
+		#debug($data);
+		return $data;
+	}
+
+	private function getImages($ID){
+		$data = [];
+
+		$q = 'SELECT * FROM DATA_IMAGES WHERE ID_IMAGES = :ID_IMAGES ORDER BY SERIAL_NUMBER ASC';
+		$params = [
+			'ID_IMAGES' => $ID,
+		];
+		foreach($this->db->row($q, $params) as $value){
+			$data[] = [
+				'LINK' => $value['IMAGES_IMAGE_LINK'],
+				'SUBTITLE' => $value['IMAGES_IMAGE_SUBTITLE'],
+				'SIGN' => $value['IMAGES_IMAGE_SIGN'],
+			];
+		}
+		return $data;
+	}
 
 
 
@@ -275,7 +345,7 @@ class MainAdmin extends Admin {
 				}
 			}
 		}
-		//debug($return);
+		#debug($return);
 		return $return;
 	}
 
@@ -482,6 +552,9 @@ class MainAdmin extends Admin {
 		unset($result);
 		return $return;
 	}
+
+
+
 
 
 
@@ -921,7 +994,7 @@ class MainAdmin extends Admin {
 				'classList'=>'remove',
 				'text'=>'X',
 				'events'=>[
-					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/buses/remove/' . $val['ID'] .'\', this)',
+					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/buses/remove/' . $val['ID'] .'\', this, true)',
 				],
 			];
 			unset($result[$key]['ID']);
@@ -968,7 +1041,7 @@ class MainAdmin extends Admin {
 				'classList'=>'remove',
 				'text'=>'X',
 				'events'=>[
-					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/minivans/remove/' . $val['ID'] .'\', this)',
+					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/minivans/remove/' . $val['ID'] .'\', this, true)',
 				],
 			];
 			unset($result[$key]['ID']);
@@ -1000,7 +1073,7 @@ class MainAdmin extends Admin {
 				'classList'=>'remove',
 				'text'=>'X',
 				'events'=>[
-					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/news/remove/' . $val['ID'] .'\', this)',
+					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/news/remove/' . $val['ID'] .'\', this, true)',
 				],
 			];
 			unset($result[$key]['ID']);
@@ -1035,7 +1108,7 @@ class MainAdmin extends Admin {
 				'classList'=>'remove',
 				'text'=>'X',
 				'events'=>[
-					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/vacancies/remove/' . $val['ID'] .'\', this)',
+					'onclick'=>'return cms.ajaxSend(\'/admin/ajax/catalog/vacancies/remove/' . $val['ID'] .'\', this, true)',
 				],
 			];
 			unset($result[$key]['ID']);

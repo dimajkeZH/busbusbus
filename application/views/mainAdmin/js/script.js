@@ -88,7 +88,7 @@ function tableCol_Add(THIS, id = null){
 
 	$(trList[0]).append('<th><button class="remove" onclick="return tableCol_Delete(this'+((id != null)?(', '+id):'')+')">X</button></th>');
 	for(let trIndex = 1; trIndex < trList.length; trIndex++){
-		$(trList[trIndex]).append('<td><input autocomplete="off" name="CELL_TABLE'+((id != null)?id:'')+'_'+trIndex+'_'+tdCount+'" value="" type="text"></td>');
+		$(trList[trIndex]).append('<td><input autocomplete="off" name="CELL_TABLE'+((id != null)?id:'')+'_'+trIndex+'_'+tdCount+'" type="text" value=""></td>');
 	}
 	return false;
 }
@@ -102,7 +102,7 @@ function tableRow_Add(THIS, id = null){
 
 	let newtr 	= '<tr><td><button class="remove" onclick="return tableRow_Delete(this'+((id != null)?(', '+id):'')+')">X</button></td>';
 	for(let i = 1; i < tdCount; i++){
-		newtr += '<td><input autocomplete="off" name="CELL_TABLE'+((id != null)?id:'')+'_'+trCount+'_'+i+'" value="" type="text"></td>';
+		newtr += '<td><input autocomplete="off" name="CELL_TABLE'+((id != null)?id:'')+'_'+trCount+'_'+i+'" type="text" value=""></td>';
 	}
 	newtr += '</tr>';
 	$(table).find('tbody:last-child').append(newtr);
@@ -140,15 +140,21 @@ function addMultiTable(THIS){
 	let box = $(THIS).closest('.form_content')[0];
 	let lastTable = $(box).find('.table_info.forma_group');
 	lastTable = lastTable[lastTable.length - 1];
-	let multitableCount = $(box).find('input[name^=ID_TABLE]').length;
+	let multitableCount = $(box).find('table.forma_group_item').length;
 	let rowCount = $(THIS).parent().parent().find('input[name=rowCount]')[0].value;
 	let colCount = $(THIS).parent().parent().find('input[name=colCount]')[0].value;
 
-	console.log(lastTable);
-	console.log(multitableCount);
+	let multitable_id = lastTable.querySelector('.forma_group_item').getAttribute('data-multitable-id');
+	let local_multitable_id = multitableCount;
+	
+	//console.log(lastTable);
+	//console.log(multitableCount);
 
-	let newTable = '<hr><input name="ID_TABLE'+multitableCount+'" value="-1" style="display:none;" type="text"><div class="forma_group"><p>Заголовок мультитаблицы</p><div class="forma_group_item text"><input name="TITLE_TABLE'+multitableCount+'" value="" type="text"><p class="forma_group_item_description"></p></div></div>';
-	newTable += '<div class="table_info forma_group"><div class="table_info_btns"><button class="add" onclick="return tableRow_Add(this, '+multitableCount+')">Добавить Строку</button><button class="add" onclick="return tableCol_Add(this, '+multitableCount+')">Добавить Столбец</button></div><table class="forma_group_item"><tbody>';
+	//console.log(multitable_id);
+	//console.log(local_multitable_id);
+	
+	let newTable = '<hr><input name="ID_TABLE'+multitableCount+'" value="-1" style="display:none;" type="text"><div class="forma_group"><p>Подзаголовок мультитаблицы</p><div class="forma_group_item text"><input name="TITLE_TABLE'+multitableCount+'" value="" type="text"><p class="forma_group_item_description"></p></div></div>';
+	newTable += '<div class="table_info forma_group"><div class="table_info_btns"><button class="add" onclick="return tableRow_Add(this, '+multitableCount+')">Добавить Строку</button><button class="add" onclick="return tableCol_Add(this, '+multitableCount+')">Добавить Столбец</button></div><table data-multitable-id="' + multitable_id + '" data-multitable-component-id="' + local_multitable_id + '" class="forma_group_item"><tbody>';
 	
 	newTable += '<tr class="table_info_head"><th></th>';
 
@@ -216,11 +222,27 @@ function addImage(THIS){
 
 	let imgCount = $(THIS).parent().parent().find('input[name=imgCount]')[0].value;
 
-	console.log(box);
-	console.log(imgCount);
+	let parentBox = $(THIS).closest('.form_content');
+	if(parentBox.length > 0){
+		parentBox = parentBox[0];
+	}
 
-	//let child = $(box).find('');
+	let index = Math.max(
+		$(parentBox).find('input[name^=IMAGES_IMAGE_SUBTITLE]').length,
+		$(parentBox).find('input[name^=IMAGES_IMAGE_LINK]').length,
+		$(parentBox).find('textarea[name^=IMAGES_IMAGE_SIGN]').length
+	);
+
+	let images = '';
+	for(let i = index; i < index*1 + imgCount*1; i++){
+		images += Components._get_html_field__image(i,
+			'', 'IMAGES_IMAGE_SUBTITLE',
+			'', 'IMAGES_IMAGE_LINK',
+			'', 'IMAGES_IMAGE_SIGN');
+	}
 	
+	$(box).before(images);
+
 	return false;
 }
 
@@ -339,22 +361,24 @@ function minus(This){
 
 
 //
-function checkURI(THIS){
+function checkURI(THIS, check_id){
 	let uri = THIS.value;
-	let parent = $(THIS).closest('.form_content')[0];
-	let input_ID = $(parent).find('input[name=ID]')[0];
-	let ID = input_ID.value;
-
 	let uri_data = new FormData();
+	let ID;
+	if(check_id){
+		ID = window.location.pathname.split('/');
+		ID = ID[ID.length-1];
+	}
 	uri_data.append('DATA', JSON.stringify({
+		'URI': uri,
+		'CHECK_ID': check_id,
 		'ID': ID,
-		'URI': uri
 	}));
-
 	new api('api').send('/admin/api/uri', uri_data, checkURIafter);
 }
 //
 function checkURIafter(data){
+	console.log(data);
 	cms.show_message(data.message, data.status);
 }
 

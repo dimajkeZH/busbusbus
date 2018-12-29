@@ -42,8 +42,8 @@ abstract class AdminController extends Controller {
 		$this->files = $_FILES;
 	}
 
-	public function render($iscontent = false){
-		$this->view->renderAdmin($iscontent);
+	public function render($vars = false){
+		$this->view->renderAdmin($vars);
 	}
 
 	public function outer_struct($type, $content = [], $btns = [], $additions = []){

@@ -392,7 +392,7 @@
             transition: all 0.2s;
             font-size: 16px; }
           .main_content .main_content_info .block_form .forma_group .forma_group_item textarea {
-            height: 100px;
+            height: 550px;
             resize: none; }
           .main_content .main_content_info .block_form .forma_group .forma_group_item select option {
             background-color: transparent; }
@@ -554,10 +554,6 @@
           .main_content .main_content_info .block_form .table_info table th {
             padding: 5px;
             border: 1px solid rgba(0, 0, 0, 0.4); }
-          .main_content .main_content_info .block_form .table_info table tr {
-            min-width: 20%; }
-          .main_content .main_content_info .block_form .table_info table tr:hover {
-            background-color: #999; }
           .main_content .main_content_info .block_form .table_info table td {
             padding: 5px;
             border: 1px solid rgba(0, 0, 0, 0.4); }
@@ -578,6 +574,10 @@
               border: 2px solid #b5eae0;
               -webkit-box-shadow: 0px 0px 5px 1px #b5eae0;
               box-shadow: 0px 0px 5px 1px #b5eae0; }
+          .main_content .main_content_info .block_form .table_info table tr {
+            min-width: 20%; }
+          .main_content .main_content_info .block_form .table_info table tbody tr:hover {
+            background-color: #999; }
       .main_content .main_content_info .block_form .block_settings {
         display: -webkit-flex;
         display: -moz-flex;

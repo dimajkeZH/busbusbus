@@ -128,17 +128,19 @@ return [
 		'action' => 'saveSettings',
 	],
 
-	//child pages (do change[1+]/do add[0])
-	'admin/save/pages' => [
+
+	'admin/site/pages/save/[0-9]{1,}' => [
 		'controller' => 'AjaxAdmin',
 		'action' => 'savePages',
 	],
-	//child pages (do delete[1+])
-	'admin/delete/pages/[0-9]{1,}' => [
+	'admin/site/pages/remove/[0-9]{1,}' => [
 		'controller' => 'AjaxAdmin',
 		'action' => 'delPages',
 	],
-
+	'admin/site/pages/add' => [
+		'controller' => 'AjaxAdmin',
+		'action' => 'addPages',
+	],
 
 
 	//

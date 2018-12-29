@@ -35,7 +35,7 @@ class MainAdminController extends AdminController {
 	public function authAction(){
 		if(!$this->model->isAuth()){
 			$this->init('adminEmpty');
-			$this->render(true);
+			$this->render($this->model->getCMSheaders());
 		}else{
 			$this->view->redirect('/admin/main');
 		}
@@ -62,7 +62,10 @@ class MainAdminController extends AdminController {
 		$this->isAuth();
 		$this->init();
 		if($this->isAjax){
-			$content = $this->model->siteContent();
+			$content = $this->outer_struct(
+				self::PAGE_TYPES['PAGE'],
+				$this->model->siteContent()
+			);
 			$this->model->message(true, '', $content);
 		}else{
 			$this->render();
@@ -73,7 +76,11 @@ class MainAdminController extends AdminController {
 		$this->isAuth();
 		$this->init();
 		if($this->isAjax){
-			$content = $this->outer_struct(self::PAGE_TYPES['PAGE'], $this->model->sitePagesContent($this->route));
+			$content = $this->outer_struct(
+				self::PAGE_TYPES['PAGE'],
+				$this->model->sitePagesContent($this->route),
+				$this->model->sitePagesContent_btn($this->route)
+			);
 			$this->model->message(true, '', $content);
 		}else{
 			$this->render();

@@ -32,6 +32,9 @@ abstract class Admin extends Model {
 	const IMAGE_FILE_FORMAT = 'png';
 
 	const SESSION_ERR_NAME = 'err';
+
+	const CMS_NAME = 'EASY_CMS';
+	const CMS_VER = 0.6;
 	/* CLASS VARIABLES END */
 
 
@@ -136,6 +139,13 @@ abstract class Admin extends Model {
 
 	public function clear_err($msg = ''){
 		unset($_SESSION[self::SESSION_ERR_NAME]);
+	}
+
+	public function getCMSheaders(){
+		return [
+			'CMS_NAME'=> self::CMS_NAME,
+			'CMS_VER'=> self::CMS_VER,
+		];
 	}
 	/* PUBLIC FUNCTIONS END */	
 
