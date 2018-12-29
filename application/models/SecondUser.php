@@ -6,9 +6,50 @@ use application\models\User;
 
 class SecondUser extends User {
 
-	public function getContent($route) {
+
+	const CONTENT = 'CONTENT';
+	const VACANCIESLIST = 'VACANCIESLIST';
+	const PAGELIST = 'PAGELIST';
+	const USER_CHOICE = 'USER_CHOICE';
+	const NEWS = 'NEWS';
+	const NEWS_ON_INDEX = 'NEWS_ON_INDEX';
+	const LOCATION = 'LOCATION';
+
+
+	public function getContent($route, $ADDITIONALS = ['CONTENT']){
+		$result = [];
+		foreach($ADDITIONALS as $item){
+			switch($item){
+				case self::CONTENT:
+					$result[self::CONTENT] = $this->content($route);
+					break;
+				case self::USER_CHOICE:
+					$result[self::USER_CHOICE] = $this->choice_list();
+					break;
+				case self::VACANCIESLIST:
+					$result[self::VACANCIESLIST] = $this->vacancieslist();
+					break;
+				case self::PAGELIST:
+					$result[self::PAGELIST] = $this->pagelist($route);
+					break;
+				case self::NEWS:
+					$result[self::NEWS] = $this->getNews();
+					break;
+				case self::NEWS_ON_INDEX:
+					$result[self::NEWS_ON_INDEX] = $this->getNews(true);
+					break;
+				case self::LOCATION:
+					$result[self::LOCATION] = $this->getLocationID($route);
+					break;
+			}
+		}
+		return $result;
+	}
+
+
+	public function content($route) {
 		#debug($route);
-		$return['CONTENT'] = [];
+		$return = [];
 		
 		$q = 'SELECT P.ID, P.URI, LL.CONTROLLER, LL.ACTION FROM PAGES as P INNER JOIN LIB_LOCATIONS as LL ON P.ID_LOCATION = LL.ID WHERE LL.CONTROLLER = :CONTROLLER AND LL.ACTION = :ACTION AND P.URI = :URI';
 		$params = [
@@ -31,17 +72,17 @@ class SecondUser extends User {
 			$val = $item['VAL'];
 
 			if($var == 'TABLE_ID'){
-				$return['CONTENT']['TABLE'] = $this->getTable($val);
+				$return['TABLE'] = $this->getTable($val);
 			}elseif($var == 'MULTITABLE_ID'){
-				$return['CONTENT']['MULTITABLE'] = $this->getMultitable($val);
+				$return['MULTITABLE'] = $this->getMultitable($val);
 			}elseif($var == 'IMAGES_ID'){
-				$return['CONTENT']['IMAGES'] = $this->getImages($val);
+				$return['IMAGES'] = $this->getImages($val);
 			}elseif($var == 'LINKS_IS_BUSES' && $val == 1){
-				$return['CONTENT']['LIST_BUSES'] = $this->getBuses();
+				$return['LIST_BUSES'] = $this->getBuses();
 			}elseif($var == 'LINKS_IS_MINIVANS' && $val == 1){
-				$return['CONTENT']['LIST_MINIVANS'] = $this->getMinivans();
+				$return['LIST_MINIVANS'] = $this->getMinivans();
 			}else{
-				$return['CONTENT'][$var] = $val;
+				$return[$var] = $val;
 			}
 		}
 		#debug($return);
@@ -50,15 +91,39 @@ class SecondUser extends User {
 	}
 
 	private function getTable($ID){
-		return [];
+		$result = [];
+
+		$result = $this->db->row('SELECT ROW, COL, VAL FROM DATA_TABLE WHERE ID_TABLE = :ID_TABLE', ['ID_TABLE' => $ID]);
+		foreach($result as $val){
+			$return[$val['ROW']][$val['COL']] = $val['VAL'];
+		}
+
+		return $return;
 	}
 
 	private function getMultitable($ID){
-		return [];
+		$return = [];
+
+		$main_result = $this->db->row('SELECT ID, SUBTITLE FROM DATA_MULTITABLE WHERE ID_MULTITABLE = :ID_MULTITABLE ORDER BY SERIAL_NUMBER ASC', ['ID_MULTITABLE' => $ID]);
+		foreach($main_result as $table_key => $table){
+			$return[$table_key]['SUBTITLE'] = $table['SUBTITLE'];
+
+			$q = 'SELECT ROW, COL, VAL FROM DATA_MULTITABLE_CONTENT WHERE ID_DATA_MULTITABLE = :ID_DATA_MULTITABLE';
+			$params = [
+				'ID_DATA_MULTITABLE' => $table['ID']
+			];
+			
+			$inner_result = $this->db->row($q, $params);
+			foreach($inner_result as $table_data){
+				$return[$table_key]['DATA'][$table_data['ROW']][$table_data['COL']] = $table_data['VAL'];
+			}
+		}
+		#debug($return);
+		return $return;
 	}
 
 	private function getImages($ID){
-		return [];
+		return $this->db->row('SELECT `IMAGES_IMAGE_LINK` as `LINK`, `IMAGES_IMAGE_SUBTITLE` as `SUBTITLE`, `IMAGES_IMAGE_SIGN` as `SIGN` FROM DATA_IMAGES WHERE ID_IMAGES = :ID_IMAGES ORDER BY SERIAL_NUMBER ASC', ['ID_IMAGES' => $ID]);
 	}
 
 

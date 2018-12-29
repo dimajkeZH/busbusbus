@@ -74,18 +74,13 @@
 		<?php if(isset($CONTENT['TABLE'])AND(count($CONTENT['TABLE'])>0)): ?>
 		<div class="table_type_two_info_table">
 			<table>
-				<?php
-				foreach($DATA as $key => $val){
-					$NEWDATA[$val['ROW']][$val['COL']] = $val['VAL'];
-				}
-				for($x = 1; $x <= count($NEWDATA); $x++){
-					echo '<tr>';
-					for($y = 1; $y <= count($NEWDATA[$x]); $y++){
-						echo '<td>'.$NEWDATA[$x][$y].'</td>';
-					}
-					echo '</tr>';
-				}
-				?>
+				<?php foreach($CONTENT['TABLE'] as $row): ?>
+					<tr>
+					<?php foreach($row as $val): ?>
+						<td><?php echo $val; ?></td>
+					<?php endforeach; ?>
+					</tr>
+				<?php endforeach; ?>
 			</table>
 		</div>
 		<?php endif; ?>
@@ -151,28 +146,19 @@
 	</div>
 	<?php if(isset($CONTENT['IMAGES']) && count($CONTENT['IMAGES'])>0): ?>
 	<div class="images_text_items">
-		<?php
-		for($x = 0; $x < count($DATA); $x++): 
-			$sign = (isset($DATA[$x]['IMAGE_SIGN'])AND($DATA[$x]['IMAGE_SIGN']!=''));
-			$subtitle = (isset($DATA[$x]['SUBTITLE'])AND($DATA[$x]['SUBTITLE']!=''));
-			$link = (isset($DATA[$x]['IMAGE_LINK'])AND($DATA[$x]['IMAGE_LINK']!=''));
-		?>
+		<?php foreach($CONTENT['IMAGES'] as $image): ?>
 		<div class="images_text_item">
-			<?php if($link): ?>
-			<img class="images_text_item_img"  src="/assets/img/templates/block_images/<?php echo $DATA[$x]['IMAGE_LINK']; ?>.png" alt="">
+			<?php if($image['LINK']): ?>
+			<img class="images_text_item_img"  src="/assets/img/templates/block_images/<?php echo $image['LINK']; ?>.png" alt="">
 			<?php endif; ?>
-			<?php if($sign OR $subtitle): ?>
+			<?php if((isset($image['SUBTITLE']) && $image['SUBTITLE'] != '') || (isset($image['SIGN']) && $image['SIGN'] != '<p></p>' && $image['SIGN'] != '')): ?>
 			<div class="images_text_item_info">
-				<?php if($subtitle): ?>
-				<h3 class="images_text_item_info_title"><?php echo $DATA[$x]['SUBTITLE']; ?></h3>
-				<?php endif; ?>
-				<?php if($sign): ?>
-				<p class="images_text_item_info_content"><?php echo $DATA[$x]['IMAGE_SIGN']; ?></p>
-				<?php endif; ?>
+				<h3 class="images_text_item_info_title"><?php echo $image['SUBTITLE'] ?? ''; ?></h3>
+				<p class="images_text_item_info_content"><?php echo $image['SIGN'] ?? ''; ?></p>
 			</div>
 			<?php endif; ?>
 		</div>
-		<?php endfor; ?>
+		<?php endforeach; ?>
 	</div>
 	<?php endif; ?>		
 </div>

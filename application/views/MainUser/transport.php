@@ -26,10 +26,8 @@ if($LOCATION == 4){
 	<h2 class="text_title"><?php echo $CONTENT['SUBTITLE']; ?></h2>
 	<div class="main_line"></div>
 	<div class="text">
-		<?php if(isset($CONTENT['DESCR'])AND(count($CONTENT['DESCR'])>0)): ?>
-			<?php foreach($CONTENT['DESCR'] as $key=>$val): ?>
-			<p><?php echo $val; ?></p>
-			<?php endforeach; ?>
+		<?php if(isset($CONTENT['DESCR']) && $CONTENT['DESCR']!='' && $CONTENT['DESCR'] != '<p></p>'): ?>
+			<?php echo $CONTENT['DESCR'] ?? ''; ?>
 		<?php endif; ?>
 	</div>
 </div>

@@ -392,7 +392,7 @@
             transition: all 0.2s;
             font-size: 16px; }
           .main_content .main_content_info .block_form .forma_group .forma_group_item textarea {
-            height: 550px;
+            height: 100px;
             resize: none; }
           .main_content .main_content_info .block_form .forma_group .forma_group_item select option {
             background-color: transparent; }

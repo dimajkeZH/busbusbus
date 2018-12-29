@@ -45,7 +45,7 @@ class CronAdmin extends Admin {
 	}
 
 	public function updMenu(){
-		$q = 'SELECT ID_LOCATION, TITLE, URI FROM PAGES WHERE ID_LOCATION IN (:LOC1, :LOC2, :LOC3, :LOC4) ORDER BY ID_LOCATION ASC, LOC_NUMBER ASC';
+		$q = 'SELECT ID_LOCATION, HTML_TITLE, URI FROM PAGES WHERE ID_LOCATION IN (:LOC1, :LOC2, :LOC3, :LOC4) ORDER BY ID_LOCATION ASC, LOC_NUMBER ASC';
 		$params = [
 			'LOC1'=> 3,
 			'LOC2'=> 5,
@@ -53,6 +53,7 @@ class CronAdmin extends Admin {
 			'LOC4'=> 9
 		];
 		$result = $this->db->row($q, $params);
+		#debug($result);
 
 		$menu = [
 			'3' => '',
@@ -70,7 +71,7 @@ class CronAdmin extends Admin {
 
 		foreach($result as $key => $val){
 			$num = $val['ID_LOCATION'];
-			$TITLE = $val['TITLE'];
+			$TITLE = $val['HTML_TITLE'];
 			$local_uri = $val['URI'];
 			
 			$URI = '/'.$this->uri[$num].'/'.$local_uri;

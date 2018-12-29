@@ -1,5 +1,5 @@
 		<div class="services_other_header">
-			<?php if(isset($CONTENT['HEADER_TITLE'])): ?>
+			<?php if(isset($CONTENT['HEADER_TITLE']) && $CONTENT['HEADER_TITLE'] != ''): ?>
 			<div class="services_other_title">
 				<h1><?php echo $CONTENT['HEADER_TITLE']; ?></h1>
 				<div class="services_other_line"></div>
@@ -63,8 +63,8 @@
 
 
 
-
-		<div class="table_type_one">
+<?php if(isset($CONTENT['MULTITABLE']) && (count($CONTENT['MULTITABLE'])>0) && !(count($CONTENT['MULTITABLE']) == 1 && count($CONTENT['MULTITABLE'][0]['DATA'][1]) == 1 && $CONTENT['MULTITABLE'][0]['DATA'][1][1] == '')): ?>
+<div class="table_type_one">
 	<div class="table_info">
 		<?php if(isset($CONTENT['MULTITABLE_TEXT_TITLE'])AND($CONTENT['MULTITABLE_TEXT_TITLE']!='')): ?>
 		<h1 	class="table_info_title"><?php echo $CONTENT['MULTITABLE_TEXT_TITLE']; ?></h1>
@@ -78,43 +78,49 @@
 		<?php endif; ?>
 	</div>
 	<div class="table_type_one_info" id="tabs">
-		<?php if(count($DATA_NAV)>0): ?>
+		<?php if(count($CONTENT['MULTITABLE'])>0): ?>
+
+
+		<?php 
+
+		$MULTITABLE_NAV = '';
+		$MULTITABLE_CONTENT = '';
+
+		foreach($CONTENT['MULTITABLE'] as $table){
+			$MULTITABLE_NAV .= '<li><p>' . $table['SUBTITLE'] . '</p></li>';
+			$MULTITABLE_CONTENT .= '<li><div class="table_type_one_info_table"><table><tbody>';
+			foreach($table['DATA'] as $row_key => $row){
+				if($row_key == 1){
+					$MULTITABLE_CONTENT .= '<tr class="table_type_one_count">';
+				}else{
+					$MULTITABLE_CONTENT .= '<tr class="table_type_one_price">';
+				}
+
+				foreach($row as $col_key => $val){
+					$MULTITABLE_CONTENT .= "<td>$val</td>";
+				}
+				$MULTITABLE_CONTENT .= '</tr>';
+			}
+			$MULTITABLE_CONTENT .= '</tbody></table></div></li>';
+		}
+
+		?>
+
+
 		<div class="table_type_one_info_nav">
 			<ul>
-				<?php foreach($DATA_NAV as $key => $val): ?>
-				<li><p><?php echo $val['SUBTITLE']; ?></p></li>
-				<?php endforeach; ?>
+				<?php echo $MULTITABLE_NAV; ?>
 			</ul>
 		</div>
-		<?php endif; ?>
-		<?php
-		if(count($DATA_TABLE)>0):
-		foreach($DATA_TABLE as $key => $val){
-			$NEWDATA[$val['ID_MULTITABLE_CONTENT']][$val['ROW']][$val['COL']] = $val['VAL'];
-		}
-		?>
 		<div class="table_type_one_info_content">
 			<ul>
-				<?php foreach($NEWDATA as $keytable => $valtable): ?>
-				<li><div class="table_type_one_info_table"><table><tbody>
-					<?php foreach($valtable as $row => $colvalue): ?>
-						<?php if($row == 1): ?>
-						<tr class="table_type_one_count">
-						<?php else: ?>
-						<tr class="table_type_one_price">
-						<?php endif;?>
-							<?php foreach($colvalue as $col => $val): ?>
-							<td><?php echo $val; ?></td>
-							<?php endforeach;?>
-						</tr>
-					<?php endforeach;?>
-				</tbody></table></div></li>
-				<?php endforeach; ?>
+				<?php echo $MULTITABLE_CONTENT; ?>
 			</ul>
 		</div>
 		<?php endif; ?>
 	</div>
 </div>
+<?php endif; ?>
 
 
 
@@ -123,43 +129,37 @@
 
 
 
-
-
+<?php if(isset($CONTENT['TABLE']) && (count($CONTENT['TABLE'])>0) && !(count($CONTENT['TABLE']) == 1 && count($CONTENT['TABLE'][1]) == 1 && $CONTENT['TABLE'][1][1] == '')): ?>
 <div class="table_type_two">
 	<div class="table_info">
-		<?php if(isset($CONTENT['TABLE_TITLE']) && ($CONTENT['TABLE_TITLE']!='')): ?>
+		<?php if(isset($CONTENT['TABLE_TITLE'])AND($CONTENT['TABLE_TITLE']!='')): ?>
 		<h2 class="table_info_title"><?php echo $CONTENT['TABLE_TITLE']; ?></h2>
 		<div class="table_line"></div>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['TABLE_SUBTITLE']) && ($CONTENT['TABLE_SUBTITLE']!='')): ?>
+		<?php if(isset($CONTENT['TABLE_SUBTITLE'])AND($CONTENT['TABLE_SUBTITLE']!='')): ?>
 		<p class="table_info_title_type_two"><?php echo $CONTENT['TABLE_SUBTITLE']; ?></p>
 		<?php endif; ?>
-		<?php if(isset($CONTENT['TABLE_DESCR']) && ($CONTENT['TABLE_DESCR']!='')): ?>
+		<?php if(isset($CONTENT['TABLE_DESCR'])AND($CONTENT['TABLE_DESCR']!='')): ?>
 		<p class="table_info_main_text"><?php echo $CONTENT['TABLE_DESCR']; ?></p>
 		<?php endif; ?>
 	</div>
 	<div class="table_type_two_info">
-		<?php if(isset($CONTENT['TABLE']) && (count($CONTENT['TABLE'])>0)): ?>
+		<?php if(isset($CONTENT['TABLE'])AND(count($CONTENT['TABLE'])>0)): ?>
 		<div class="table_type_two_info_table">
 			<table>
-				<?php
-				foreach($CONTENT['TABLE'] as $key => $val){
-					$NEWDATA[$val['ROW']][$val['COL']] = $val['VAL'];
-				}
-				for($x = 1; $x <= count($NEWDATA); $x++){
-					echo '<tr>';
-					for($y = 1; $y <= count($NEWDATA[$x]); $y++){
-						echo '<td>'.$NEWDATA[$x][$y].'</td>';
-					}
-					echo '</tr>';
-				}
-				?>
+				<?php foreach($CONTENT['TABLE'] as $row): ?>
+					<tr>
+					<?php foreach($row as $val): ?>
+						<td><?php echo $val; ?></td>
+					<?php endforeach; ?>
+					</tr>
+				<?php endforeach; ?>
 			</table>
 		</div>
 		<?php endif; ?>
 	</div>
 </div>
-
+<?php endif; ?>
 
 
 

@@ -13,7 +13,7 @@
 			<?php for($i = 0; $i < count($PAGELIST); $i++): ?>
 			<div class="excursions_item">
 				<h2 class="excursions_item_title"><?php echo $PAGELIST[$i]['TITLE']; ?></h2>
-				<p class="excursions_item_text"><?php echo $PAGELIST[$i]['DESCR']; ?></p>
+				<p class="excursions_item_text"><?php echo $PAGELIST[$i]['IMAGE_SIGN']; ?></p>
 				<div class="excursions_item_detail"><a href=<?php echo '"avtobusnyie_ekskursii/'.$PAGELIST[$i]['LINK'].'"'; ?>>Подробнее</a></div>
 			</div>
 			<?php endfor; ?>

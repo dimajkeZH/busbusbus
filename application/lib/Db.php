@@ -35,7 +35,7 @@ class Db {
 					}
 				}
 
-				/*try{
+				try{
 					$success = $stmt->execute();
 				}catch(Exception $e){
 					#debug($stmt);
@@ -44,13 +44,13 @@ class Db {
 					if(!$success){
 						return false;
 					}
-				}*/
+				}
 
-				if(!$stmt->execute()){
+				/*if(!$stmt->execute()){
 					#debug($stmt);
 					debug($tran);
 					return false;
-				}
+				}*/
 			}
 		    $this->db->commit();
 		    return true;

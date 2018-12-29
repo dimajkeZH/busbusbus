@@ -46,10 +46,15 @@ class MainUser extends User {
 
 
 	private function pagelist($route){
-		$q = '
-			SELECT NP.HTML_TITLE as TITLE, NP.DESCR, NP.URI as LINK, NP.IMAGE  
-			FROM PAGES as NP
-			WHERE NP.ID_PARENT = (SELECT P.ID FROM PAGES as P INNER JOIN LIB_LOCATIONS as LL ON LL.ID = P.ID_LOCATION WHERE (LL.CONTROLLER = :CONTROLLER) AND (LL.ACTION = :ACTION))';
+		$q = '	SELECT NP.HTML_TITLE as TITLE, NP.URI as LINK, NP.IMAGE, NP.IMAGE_SIGN  
+				FROM PAGES as NP
+				WHERE NP.ID_PARENT = (
+					SELECT P.ID 
+					FROM PAGES as P
+						INNER JOIN LIB_LOCATIONS as LL 
+						ON LL.ID = P.ID_LOCATION
+					WHERE (LL.CONTROLLER = :CONTROLLER)
+					AND (LL.ACTION = :ACTION))';
 		$params = [
 			'CONTROLLER' => $route['controller'],
 			'ACTION' => $route['action']

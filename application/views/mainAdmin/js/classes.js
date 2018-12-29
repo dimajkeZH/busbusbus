@@ -1158,7 +1158,8 @@ class Components{
 			cmsTitle = item.CMS_TITLE,
 			cmsDescr = item.CMS_DESCR,
 			cmsParent = type == FIELD_TYPES.CMB() ? parent : null,
-			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null;
+			events = item.EVENTS && item.EVENTS.length != 0 ? item.EVENTS : null,
+			style = item.STYLE || null;
 
 		let events_str = '';
 		if(events != null){
@@ -1173,19 +1174,19 @@ class Components{
 
 		switch(type){
 			case FIELD_TYPES.TEXT():
-				return Components._get_html_field__text(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__text(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.NUMBER():
-				return Components._get_html_field__number(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__number(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.TEXT_AREA():
-				return Components._get_html_field__text_area(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__text_area(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.NUMBER_BTN():
-				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__number_btn(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.FILE():
-				return Components._get_html_field__file(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__file(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.CMB():
-				return Components._get_html_field__cmb(cmsTitle, cmsDescr, value, variable, disabled, events_str, cmsParent);
+				return Components._get_html_field__cmb(cmsTitle, cmsDescr, value, variable, disabled, events_str, style, cmsParent);
 			case FIELD_TYPES.CB():
-				return Components._get_html_field__cb(cmsTitle, cmsDescr, value, variable, disabled, events_str);
+				return Components._get_html_field__cb(cmsTitle, cmsDescr, value, variable, disabled, events_str, style);
 			case FIELD_TYPES.TABLE():
 				return Components._get_html_field__table(value.ID || 0, value.DATA || [[]], value.ROWS || 1, value.COLS || 1);
 			case FIELD_TYPES.MULTITABLE():
@@ -1248,37 +1249,46 @@ class Components{
 
 
 	/* SIMPLE FIELDS */
-	static _get_html_field__text(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__text(textTitle, textDescr, value, varName, disabled, events, style){
 		return	Components.__get_html_field__startBox(textTitle) +
 				"<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "'>" +
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__number(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__number(textTitle, textDescr, value, varName, disabled, events, style){
 		return	Components.__get_html_field__startBox(textTitle) +
 				"<div class='forma_group_item text'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'>" +
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__text_area(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__text_area(textTitle, textDescr, value, varName, disabled, events, style){
+		let minheigth = '';
+		if(value.length > 499){
+			minheigth = ' style="min-height:150px"'
+		}else if(value.length > 999){
+			minheigth = ' style="min-height:450px"'
+		}else if(value.length > 1999){
+			minheigth = ' style="min-height:650px"'
+		}
+
 		return	Components.__get_html_field__startBox(textTitle) +
-				"<div class='forma_group_item textarea'><textarea " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' name='" + (!disabled ? varName : '') + "'>" + (value != '' ? value : '<p></p>') + "</textarea>" +
+				"<div class='forma_group_item textarea'><textarea" + minheigth + " " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' name='" + (!disabled ? varName : '') + "'>" + (value != '' ? value : '<p></p>') + "</textarea>" +
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__number_btn(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__number_btn(textTitle, textDescr, value, varName, disabled, events, style){
 		return	Components.__get_html_field__startBox(textTitle) +
 				"<div class='forma_group_item text_btn'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='text' name='" + (!disabled ? varName : '') + "' value='" + value + "' pattern='[0-9]{1,}'><div class='text_btns'><div class='btn_next' onclick='plus(this)'><p>+</p></div><div class='btn_prev' onclick='minus(this)'><p>-</p></div></div>" +
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__file(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__file(textTitle, textDescr, value, varName, disabled, events, style){
 		return	Components.__get_html_field__startBox(textTitle) +
 				"<div class='forma_group_item file'><input " + (disabled ? 'disabled ': '') + (events ? events : '') + "autocomplete='off' type='file' name='" + (!disabled ? varName : '') + "' title='" + value + "'>" +
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__cmb(textTitle, textDescr, value, varName, disabled, events, parent){
+	static _get_html_field__cmb(textTitle, textDescr, value, varName, disabled, events, style, parent){
 		let selected = ' selected',
 			curselected = '';
 		if(parent != null){
@@ -1299,7 +1309,7 @@ class Components{
 				Components.__get_html_field__endBox(textDescr);
 	}
 
-	static _get_html_field__cb(textTitle, textDescr, value, varName, disabled, events){
+	static _get_html_field__cb(textTitle, textDescr, value, varName, disabled, events, style){
 		let checked;
 		if(value && value == 1){
 			checked = ' checked';

@@ -1,17 +1,23 @@
+<?php 
+
+DEFINE('VERSION' , '1');
+
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 	<meta charset="UTF-8">
 	<title><?php echo isset($HTML_TITLE) ? $HTML_TITLE : 'ТриБас-М'; ?></title>
-	<link rel="shortcut icon" href="/assets/img/static/favicon.png" type="image/png">
+	<link rel="shortcut icon" href="/assets/img/static/favicon.png?<?php echo VERSION ?? ''; ?>" type="image/png">
 	<meta name="Description" content="<?php echo $HTML_DESCR; ?>">
 	<meta name="Keywords" content="<?php echo $HTML_KEYWORDS; ?>">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<meta name="format-detection" content="telephone=no">
-	<link rel="stylesheet" type="text/css" href="/assets/css/style.css">
-	<link rel="stylesheet" type="text/css" href="/assets/js/slick/slick.css">
-	<link rel="stylesheet" type="text/css" href="/assets/js/slick/slick-theme.css">
-	<link rel="stylesheet" href="/assets/css/media.css">
+	<link rel="stylesheet" type="text/css" href="/assets/css/style.css?<?php echo VERSION ?? ''; ?>">
+	<link rel="stylesheet" type="text/css" href="/assets/js/slick/slick.css?<?php echo VERSION ?? ''; ?>">
+	<link rel="stylesheet" type="text/css" href="/assets/js/slick/slick-theme.css?<?php echo VERSION ?? ''; ?>">
+	<link rel="stylesheet" href="/assets/css/media.css?<?php echo VERSION ?? ''; ?>">
 </head>
 <body>
 	<div class="header_wrapper">
@@ -54,11 +60,11 @@
 			<p>© Copyright, 2015 ТК "ТриБас" - Все права защищены.</p><p>При использовании материалов с сайта ссылка на источник обязательна.</p>
 		</div>
 	</div>
-	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
-	<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
-	<script type="text/javascript" src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
-	<script type="text/javascript" src="/assets/js/slick/slick.min.js"></script>
-	<script src="/assets/js/script.js"></script>
-	<script src='https://www.google.com/recaptcha/api.js'></script>
+	<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js?<?php echo VERSION ?? ''; ?>"></script>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-1.11.0.min.js?<?php echo VERSION ?? ''; ?>"></script>
+	<script type="text/javascript" src="http://code.jquery.com/jquery-migrate-1.2.1.min.js?<?php echo VERSION ?? ''; ?>"></script>
+	<script type="text/javascript" src="/assets/js/slick/slick.min.js?<?php echo VERSION ?? ''; ?>"></script>
+	<script src="/assets/js/script.js?<?php echo VERSION ?? ''; ?>"></script>
+	<script src='https://www.google.com/recaptcha/api.js?<?php echo VERSION ?? ''; ?>'></script>
 </body>
 </html>

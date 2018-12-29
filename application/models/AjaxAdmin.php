@@ -36,8 +36,8 @@ class AjaxAdmin extends Admin {
 
 	const TEMPLATES_DIR = '/application/views/mainAdmin/templates/';
 
-	const IMAGE_SLICK_BUSES = '';
-	const IMAGE_SLICK_MINIVANS = '';
+	const IMAGE_SLICK_BUSES = 'slick/';
+	const IMAGE_SLICK_MINIVANS = 'slick/';
 
 	public function verConfigs($post){
 		return true;
@@ -351,7 +351,7 @@ class AjaxAdmin extends Admin {
 		}
 
 		$dir = '';
-		switch($ID_PARENT){
+		switch($ID_LOCATION){
 			case 3:
 				$dir = self::IMAGE_CATALOG_SERVICES;
 				break;
@@ -367,6 +367,21 @@ class AjaxAdmin extends Admin {
 		}
 
 		$old_file = $this->db->column('SELECT IMAGE FROM PAGES WHERE ID = :ID', ['ID' => $ID]);
+		$IMAGE = '';
+
+		if(isset($old_file) && $old_file != ''){
+			if(isset($files['IMAGE'])){
+				$IMAGE = $this->replaceImage($dir, $old_file, $files['IMAGE']);
+			}else{
+				$IMAGE = $old_file;
+			}
+		}else{
+			if(isset($files['IMAGE'])){
+				$IMAGE = $this->loadImage($dir,  $files['IMAGE']);
+			}
+		}
+
+		#debug([$ID_LOCATION, $ID_PARENT, $dir, $image, $files]);
 
 		$tran[] = [
 			'sql' => 'UPDATE PAGES SET ID_LOCATION = :ID_LOCATION, ID_PARENT = :ID_PARENT, URI = :URI, LOC_NUMBER = :LOC_NUMBER, CHOICE_TITLE = :CHOICE_TITLE, HTML_TITLE = :HTML_TITLE, IMAGE = :IMAGE, IMAGE_SIGN = :IMAGE_SIGN, HTML_DESCR = :HTML_DESCR, HTML_KEYWORDS = :HTML_KEYWORDS WHERE ID = :ID',
@@ -380,7 +395,7 @@ class AjaxAdmin extends Admin {
 				'ID_LOCATION'			=> $ID_LOCATION,
 				'LOC_NUMBER'			=> $LOC_NUMBER,
 				'CHOICE_TITLE'			=> isset($post['CHOICE_TITLE']) ? $post['CHOICE_TITLE'] : '',
-				'IMAGE'					=> isset($post['IMAGE']) && $dir != '' ? $this->replaceImage($dir, $old_file, $files['IMAGE']) : '',
+				'IMAGE'					=> $IMAGE,
 				'IMAGE_SIGN'			=> isset($post['IMAGE_SIGN']) ? $post['IMAGE_SIGN'] : '',
 			],
 		];
@@ -498,6 +513,7 @@ class AjaxAdmin extends Admin {
 
 			}elseif($field['TYPE'] == 'IMAGES'){
 				$images = [];
+				$old_images = $this->db->row('SELECT IMAGES_IMAGE_LINK FROM DATA_IMAGES WHERE  ID_IMAGES = :ID_IMAGES', ['ID_IMAGES' => $old_data['IMAGES_ID'] ?? 0]);
 
 				foreach($post as $key => $val){
 					if(preg_match('#^IMAGES_IMAGE_LINK[0-9]{1,}$#', $key)){
@@ -516,9 +532,17 @@ class AjaxAdmin extends Admin {
 					$index = 'IMAGES_IMAGE_LINK'.$key;
 
 					if(isset($files[$index])){
-						$filename = $this->loadImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $files[$index]);
+						if(isset($old_images[$key]['IMAGES_IMAGE_LINK'])){
+							$filename = $this->replaceImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $old_images[$key]['IMAGES_IMAGE_LINK'], $files[$index]);
+						}else{
+							$filename = $this->loadImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $files[$index]);
+						}
 					}else{
-						$filename = '';
+						if(isset($old_images[$key]['IMAGES_IMAGE_LINK'])){
+							$filename = $old_images[$key]['IMAGES_IMAGE_LINK'];
+						}else{
+							$filename = '';
+						}
 					}
 
 					$images[$key]['LINK'] = $filename ?? '';
@@ -528,10 +552,10 @@ class AjaxAdmin extends Admin {
 				$isset_images = isset($old_data['IMAGES_ID']) && $old_data['IMAGES_ID'] > 0;
 
 				if($isset_images){
-					$old_images = $this->db->row('SELECT IMAGES_IMAGE_LINK FROM DATA_IMAGES WHERE  ID_IMAGES = :ID_IMAGES', ['ID_IMAGES' => $old_data['IMAGES_ID']]);
-					foreach($old_images as $key => $old_image){
+
+					/*foreach($old_images as $key => $old_image){
 						$this->deleteImage(self::IMAGE_TEMPLATE_BLOCK_IMAGES, $old_image['IMAGES_IMAGE_LINK']); 
-					}
+					}*/
 
 					$tran[] = [
 						'sql' => 'DELETE FROM DATA_IMAGES WHERE ID_IMAGES = :ID_IMAGES',
