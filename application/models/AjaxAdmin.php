@@ -614,6 +614,11 @@ class AjaxAdmin extends Admin {
 							case 'HEADER_RIGHT_IMAGE':
 								$dir = self::IMAGE_TEMPLATE_HEADER_PAGE;
 								break;
+							case 'PRICE_IMAGE1':
+							case 'PRICE_IMAGE2':
+							case 'PRICE_IMAGE3':
+								$dir = self::IMAGE_CATALOG_EXCURSIONS;
+								break;
 							default:
 								debug($field);
 						}
