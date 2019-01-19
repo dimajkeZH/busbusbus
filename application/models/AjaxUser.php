@@ -23,7 +23,7 @@ class AjaxUser extends User {
 	}
 
 	public function orderSend($post){
-			$this->order_mail = '19jenia96@mail.ru';
+			$this->order_mail = ORDER_MAIL;
 
 			$to_date = $this->wrapData($_POST['to_date']);
 			$addr_from = $this->wrapData($_POST['addr_from']);
@@ -99,9 +99,10 @@ class AjaxUser extends User {
 			//$headers .= "X-Priority: 1\n"; 
 			//$headers .= "Return-Path: <".POST_MAIL.">\n";  
 			/* try to send message */
-			$message = wordwrap($message, 70, "\r\n");
+			$message = $this->wrapData($message, 70, "\r\n");
 			try{
-				$status = mail($this->order_mail, self::order_title, $message);
+				//$status = mail($this->order_mail, self::order_title, $message);
+				debug($message);
 			}catch(Exception $e){
 				$status = false;
 			}finally{
@@ -124,7 +125,7 @@ class AjaxUser extends User {
 	}
 
 	public function feedbackSend($post){
-			$this->feedback_mail = '19jenia96@mail.ru';
+			$this->feedback_mail = POST_MAIL;
 
 			$name = $this->clear($_POST['name']);
 			$email = $this->clear($_POST['email']);
@@ -164,7 +165,7 @@ class AjaxUser extends User {
 				//$headers .= "X-Priority: 1\n"; 
 				//$headers .= "Return-Path: <".POST_MAIL.">\n";  
 				/* try to send message */
-				$message = wordwrap($message, 70, "\r\n");
+				$message = $this->wrapData($message, 70, "\r\n");
 				try{
 					$status = mail($this->feedback_mail, self::feedback_title, $message);
 				}catch(Exception $e){
@@ -182,6 +183,6 @@ class AjaxUser extends User {
 	}
 
 	public function wrapData($str){
-		return wordwrap($this->clear($str), 70, "\r\n");
+		return urldecode(wordwrap($this->clear($str), 70, "\r\n"));
 	}
 }

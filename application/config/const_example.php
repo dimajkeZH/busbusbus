@@ -1,0 +1,6 @@
+<?php
+
+DEFINE('POST_MAIL', '');
+DEFINE('ORDER_MAIL', '');
+
+DEFINE('CAPTCHA_SECRET', '');
